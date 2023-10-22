@@ -3,8 +3,8 @@ from telegram.ext import Filters
 
 #from telegram import Update
 #from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-token='6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg'
-updater = telegram.ext.Updater('6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg',use_context=True)
+token='******************************'
+updater = telegram.ext.Updater(token,use_context=True)
 dispatcher=updater.dispatcher
 
 def start(update,context):
@@ -37,9 +37,3 @@ dispatcher.add_handler(telegram.ext.MessageHandler(Filters.voice, send_audio))
 
 updater.start_polling()
 updater.idle()
-
-#app = ApplicationBuilder().token("6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg").build()
-
-#app.add_handler(CommandHandler("hello", hello))
-
-#app.run_polling()
