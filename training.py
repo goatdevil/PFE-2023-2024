@@ -7,7 +7,7 @@ from google.cloud import speech
 
 #from telegram import Update
 #from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-token='6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg'
+token='*******'
 updater = telegram.ext.Updater(token,use_context=True)
 dispatcher=updater.dispatcher
 GOOGLE_CLOUD_KEY_PATH = "forward-subject-404414-79ec7490f294.json"
