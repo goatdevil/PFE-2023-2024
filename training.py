@@ -1,11 +1,17 @@
 import telegram.ext
 from telegram.ext import Filters
+from google.oauth2 import service_account
+from google.cloud import speech
+
+
 
 #from telegram import Update
 #from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-token='******************************'
+token='6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg'
 updater = telegram.ext.Updater(token,use_context=True)
 dispatcher=updater.dispatcher
+GOOGLE_CLOUD_KEY_PATH = "forward-subject-404414-79ec7490f294.json"
+
 
 def start(update,context):
     update.message.reply_text('Training PFE 2023')
@@ -25,9 +31,24 @@ def send_pict(update, context):
     print('ok')
 
 def send_audio(update,context):
-    print("sound ok")
-    sound=context.bot.get_file(update.message.voice.file_id)
-    print(sound)
+    file = context.bot.get_file(update.message.voice.file_id)
+    audio = bytes(file.download_as_bytearray())
+
+    client = speech.SpeechClient.from_service_account_file(GOOGLE_CLOUD_KEY_PATH)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.OGG_OPUS,
+        sample_rate_hertz=48000,
+        language_code="fr-FR",
+    )
+
+    audio=speech.RecognitionAudio(content=audio)
+    response=client.recognize(config=config,audio=audio)
+
+    for result in response.results:
+        print("Transcription: {}".format(result.alternatives[0].transcript))
+
+
+
 
 dispatcher.add_handler(telegram.ext.CommandHandler('start',start))
 dispatcher.add_handler(telegram.ext.CommandHandler('help',help))
@@ -37,3 +58,9 @@ dispatcher.add_handler(telegram.ext.MessageHandler(Filters.voice, send_audio))
 
 updater.start_polling()
 updater.idle()
+
+#app = ApplicationBuilder().token("6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg").build()
+
+#app.add_handler(CommandHandler("hello", hello))
+
+#app.run_polling()
