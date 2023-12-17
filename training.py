@@ -1,21 +1,37 @@
 import time
 
 import telegram.ext
-from telegram.ext import Filters
+from telegram.ext import Filters, ConversationHandler, CommandHandler, MessageHandler, CallbackContext, Updater
 from google.oauth2 import service_account
 from google.cloud import speech
 import threading
 import psycopg2
+import openai
+
 
 #from telegram import Update
 #from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 
 
+def requete_GPT (texte):
+
+
+    response = openai.chat.completions.create(
+        model = "gpt-3.5-turbo",
+        messages=[{"role": "user", "content": f'resume moi ce  texte : {texte}'}],
+        max_tokens=300,
+        temperature=1.2,
+        stop=None
+    )
+    return response.choices[0].message.content
+
+
+
 
 
 def register (update,context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     search_query = f"SELECT * FROM connexion WHERE user_id = '{user_id}';"
     cursor.execute(search_query)
     results = cursor.fetchall()
@@ -31,11 +47,11 @@ def register (update,context):
 
 def start(update,context):
     update.message.reply_text('Training PFE 2023')
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     update.message.reply_text(f'Votre ID : {user_id}')
 
 def update_mdp(update,context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     mdp = update.message.text.split()[1]
     new_mdp =update.message.text.split()[2]
     select_query = f"SELECT * FROM connexion WHERE user_id = '{user_id}' AND mdp = '{mdp}';"
@@ -50,7 +66,7 @@ def update_mdp(update,context):
 
 
 def connexion(update,context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     if user_id in tokens_list.keys():
         update.message.reply_text('vous êtes déjà connecté')
     else:
@@ -86,16 +102,20 @@ def help(update,context):
     /help => commande annexe"""
                               )
 def send(update,context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     if user_id in tokens_list.keys():
         tokens_list[user_id]=time.time()
-        text=update.message.text.strip('/send ')
-        update.message.reply_text(text)
+        text=update.message.text.replace('/send ','')
+
+        resume=requete_GPT(text)
+        print(resume)
+        update.message.reply_text(resume)
+
     else:
         update.message.reply_text('Veuillez vous connecter')
 
 def send_pict(update, context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     if user_id in tokens_list.keys():
         tokens_list[user_id] = time.time()
         image=context.bot.get_file(update.message.photo[-1].file_id)
@@ -105,7 +125,7 @@ def send_pict(update, context):
         update.message.reply_text('Veuillez vous connecter')
 
 def send_audio(update,context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     if user_id in tokens_list.keys():
         tokens_list[user_id] = time.time()
         file = context.bot.get_file(update.message.voice.file_id)
@@ -116,13 +136,19 @@ def send_audio(update,context):
             encoding=speech.RecognitionConfig.AudioEncoding.OGG_OPUS,
             sample_rate_hertz=48000,
             language_code="fr-FR",
+            enable_automatic_punctuation=True
+
         )
 
         audio=speech.RecognitionAudio(content=audio)
         response=client.recognize(config=config,audio=audio)
 
         for result in response.results:
-            print("Transcription: {}".format(result.alternatives[0].transcript))
+            text=result.alternatives[0].transcript
+            print("Transcription: {}".format(text))
+            resume = requete_GPT(text)
+            print(resume)
+            update.message.reply_text(resume)
     else:
         update.message.reply_text('Veuillez vous connecter')
 
@@ -135,6 +161,8 @@ db_config = {
     'port': '5432',  # Par défaut, le port de PostgreSQL est 5432
 }
 
+openai.api_key='************************'
+
 try:
     connection = psycopg2.connect(**db_config)
     print('connected')
@@ -142,28 +170,27 @@ try:
 except:
     print('not connected')
 
-
-
 token='************'
-updater = telegram.ext.Updater(token,use_context=True)
-dispatcher=updater.dispatcher
+
 GOOGLE_CLOUD_KEY_PATH = "forward-subject-404414-79ec7490f294.json"
 
 tokens_list={}
 lock = threading.Lock()
 check_thread = threading.Thread(target=check_connexion)
 check_thread.start()
-dispatcher.add_handler(telegram.ext.CommandHandler('start',start))
-dispatcher.add_handler(telegram.ext.CommandHandler('help',help))
-dispatcher.add_handler(telegram.ext.CommandHandler('send',send))
-dispatcher.add_handler(telegram.ext.CommandHandler('connexion',connexion))
-dispatcher.add_handler(telegram.ext.CommandHandler('register',register))
-dispatcher.add_handler(telegram.ext.CommandHandler('update_mdp',update_mdp))
+
+updater = Updater(token,use_context=True)
+dispatcher=updater.dispatcher
+dispatcher.add_handler(CommandHandler('start',start))
+dispatcher.add_handler(CommandHandler('help',help))
+dispatcher.add_handler(CommandHandler('send',send))
+dispatcher.add_handler(CommandHandler('connexion',connexion))
+dispatcher.add_handler(CommandHandler('register',register))
+dispatcher.add_handler(CommandHandler('update_mdp',update_mdp))
 dispatcher.add_handler(telegram.ext.MessageHandler(Filters.photo, send_pict))
 dispatcher.add_handler(telegram.ext.MessageHandler(Filters.voice, send_audio))
 
 updater.start_polling()
 updater.idle()
-
 
 
