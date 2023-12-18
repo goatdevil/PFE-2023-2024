@@ -9,9 +9,6 @@ import psycopg2
 import openai
 
 
-#from telegram import Update
-#from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-
 
 
 def requete_GPT (texte):
@@ -48,7 +45,9 @@ def register (update,context):
 def start(update,context):
     update.message.reply_text('Training PFE 2023')
     user_id = update.effective_user.id
+
     update.message.reply_text(f'Votre ID : {user_id}')
+
 
 def update_mdp(update,context):
     user_id = update.effective_user.id
@@ -80,6 +79,7 @@ def connexion(update,context):
                 print(tokens_list)
                 update.message.reply_text('Connecté')
 
+
 def check_connexion():
     user_to_disconnect = []
     while True:
@@ -98,35 +98,49 @@ def check_connexion():
 
 def help(update,context):
     update.message.reply_text("""
-    /start => message au debut
-    /help => commande annexe"""
+    /start => Message au debut (obsolète mais ca existe quand même pour la premiere fois qu'on lance le bot)
+    /help => Commande annexe
+    /register => Permet de s'enregistrer dans la base en renseignant un mot de passe (/register mdp)
+    /connexion => Permet de ce connecter en renseignant son mot de passe (/connexion mdp)
+    /update_mdp => Permet de changer de mot de passe en renseignant l'ancien et le nouveau mot de passe (/update_mdp ancien_mdp nouveau_mdp)
+    /send_text => Permet de lancer une procedure de résumer de texte.
+    /send_audio => Permet de lancer une procedure de résumer de note vocale.
+    """
                               )
-def send(update,context):
+
+
+def send_text (update,context):
+    update.message.reply_text("Vous avez choisi d'envoyer un texte. Veuillez entrer le texte maintenant.")
+    return TEXT_INPUT
+def define_text(update,context):
     user_id = update.effective_user.id
     if user_id in tokens_list.keys():
         tokens_list[user_id]=time.time()
         text=update.message.text.replace('/send ','')
 
         resume=requete_GPT(text)
-        print(resume)
         update.message.reply_text(resume)
+        resume=resume.replace("'",' ')
+        update.message.reply_text('entré un titre')
 
+        context.chat_data['text'] = resume
+
+        return TITLE_INPUT
     else:
         update.message.reply_text('Veuillez vous connecter')
+        return ConversationHandler.END
 
-def send_pict(update, context):
-    user_id = update.effective_user.id
-    if user_id in tokens_list.keys():
-        tokens_list[user_id] = time.time()
-        image=context.bot.get_file(update.message.photo[-1].file_id)
-        print(image)
-        print('ok')
-    else:
-        update.message.reply_text('Veuillez vous connecter')
+
 
 def send_audio(update,context):
+    update.message.reply_text("Veuillez envoyer une note vocale")
+    return VOICE_INPUT
+
+def define_audio(update,context):
+    print('Define audio called')
     user_id = update.effective_user.id
     if user_id in tokens_list.keys():
+        print('vocal recus')
         tokens_list[user_id] = time.time()
         file = context.bot.get_file(update.message.voice.file_id)
         audio = bytes(file.download_as_bytearray())
@@ -147,11 +161,45 @@ def send_audio(update,context):
             text=result.alternatives[0].transcript
             print("Transcription: {}".format(text))
             resume = requete_GPT(text)
-            print(resume)
+            resume = resume.replace("'", ' ')
+            context.chat_data['text'] = resume
             update.message.reply_text(resume)
+        update.message.reply_text('entré un titre')
+        return TITLE_INPUT_AUDIO
     else:
         update.message.reply_text('Veuillez vous connecter')
+        return ConversationHandler.END
 
+def define_title(update,context):
+    user_id = update.effective_user.id
+    title=update.message.text
+    context.user_data.clear()
+    update.message.reply_text(f'Le titre du document est : {title}')
+    text = context.chat_data.get('text', 'Aucun texte enregistré')
+    insert_query_doc = f"""INSERT INTO doc (contenue,id_user,title)
+    SELECT '{text}',c.id,'{title}'
+    FROM connexion c
+    WHERE c.user_id = '{user_id}';"""
+    cursor.execute(insert_query_doc)
+    connection.commit()
+    context.chat_data.clear()
+    print(text)
+    return ConversationHandler.END
+
+def cancel (update,context) :
+    context.chat_data.clear()
+    return ConversationHandler.END
+
+
+def send_pict(update, context):
+    user_id = update.effective_user.id
+    if user_id in tokens_list.keys():
+        tokens_list[user_id] = time.time()
+        image=context.bot.get_file(update.message.photo[-1].file_id)
+        print(image)
+        print('ok')
+    else:
+        update.message.reply_text('Veuillez vous connecter')
 
 db_config = {
     'host': '34.163.90.30',
@@ -161,7 +209,7 @@ db_config = {
     'port': '5432',  # Par défaut, le port de PostgreSQL est 5432
 }
 
-openai.api_key='************************'
+openai.api_key='**********'
 
 try:
     connection = psycopg2.connect(**db_config)
@@ -170,7 +218,10 @@ try:
 except:
     print('not connected')
 
-token='************'
+TEXT_INPUT,TITLE_INPUT = range(2)
+VOICE_INPUT, TITLE_INPUT_AUDIO = range(2)
+
+token='**********'
 
 GOOGLE_CLOUD_KEY_PATH = "forward-subject-404414-79ec7490f294.json"
 
@@ -183,14 +234,36 @@ updater = Updater(token,use_context=True)
 dispatcher=updater.dispatcher
 dispatcher.add_handler(CommandHandler('start',start))
 dispatcher.add_handler(CommandHandler('help',help))
-dispatcher.add_handler(CommandHandler('send',send))
+
+
+conversation_handler_text = ConversationHandler(
+        entry_points=[CommandHandler('send_text', send_text)],
+        states={
+            TEXT_INPUT : [MessageHandler(Filters.text & ~Filters.command, define_text)],
+            TITLE_INPUT: [MessageHandler(Filters.text & ~Filters.command, define_title)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+    )
+
+dispatcher.add_handler(conversation_handler_text)
+
+
+conversation_handler_voice=ConversationHandler(
+    entry_points=[CommandHandler('send_audio',send_audio)],
+    states={
+        VOICE_INPUT : [MessageHandler(Filters.voice, define_audio)],
+        TITLE_INPUT_AUDIO : [MessageHandler(Filters.text & ~Filters.command, define_title)],
+    },
+    fallbacks=[CommandHandler('cancel', cancel)],
+)
+
+dispatcher.add_handler(conversation_handler_voice)
 dispatcher.add_handler(CommandHandler('connexion',connexion))
 dispatcher.add_handler(CommandHandler('register',register))
 dispatcher.add_handler(CommandHandler('update_mdp',update_mdp))
 dispatcher.add_handler(telegram.ext.MessageHandler(Filters.photo, send_pict))
-dispatcher.add_handler(telegram.ext.MessageHandler(Filters.voice, send_audio))
+
+
 
 updater.start_polling()
 updater.idle()
-
-
