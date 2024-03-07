@@ -1,39 +1,169 @@
+import time
+
 import telegram.ext
 from telegram.ext import Filters
+from google.oauth2 import service_account
+from google.cloud import speech
+import threading
+import psycopg2
 
 #from telegram import Update
 #from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-token='******************************'
-updater = telegram.ext.Updater(token,use_context=True)
-dispatcher=updater.dispatcher
+
+
+
+
+
+def register (update,context):
+    user_id = update.message.from_user.id
+    search_query = f"SELECT * FROM connexion WHERE user_id = '{user_id}';"
+    cursor.execute(search_query)
+    results = cursor.fetchall()
+    if not results:
+        mdp = update.message.text.split()[1]
+        print(mdp)
+        insert_query = f"INSERT INTO connexion (mdp, user_id) VALUES ('{mdp}', '{user_id}');"
+        cursor.execute(insert_query)
+        connection.commit()
+        update.message.reply_text(f'Bravo, vous êtes inscrit')
+    else :
+        update.message.reply_text(f'vous êtes déjà inscrit')
 
 def start(update,context):
     update.message.reply_text('Training PFE 2023')
+    user_id = update.message.from_user.id
+    update.message.reply_text(f'Votre ID : {user_id}')
+
+def update_mdp(update,context):
+    user_id = update.message.from_user.id
+    mdp = update.message.text.split()[1]
+    new_mdp =update.message.text.split()[2]
+    select_query = f"SELECT * FROM connexion WHERE user_id = '{user_id}' AND mdp = '{mdp}';"
+    cursor.execute(select_query)
+    result = cursor.fetchone()
+    if result :
+        update_query = f"UPDATE connexion SET mdp = '{new_mdp}' WHERE user_id = '{user_id}';"
+        cursor.execute(update_query)
+        connection.commit()
+        update.message.reply_text(f"mot de passe changer pour : {new_mdp}")
+
+
+
+def connexion(update,context):
+    user_id = update.message.from_user.id
+    if user_id in tokens_list.keys():
+        update.message.reply_text('vous êtes déjà connecté')
+    else:
+        mdp=update.message.text.strip('/connexion ')
+        select_query = f"SELECT mdp FROM connexion WHERE user_id = '{user_id}';"
+        cursor.execute(select_query)
+        result = cursor.fetchone()
+        if str(mdp)==str(result[0]):
+            with lock:
+                tokens_list[user_id]=time.time()
+                print(tokens_list)
+                update.message.reply_text('Connecté')
+
+def check_connexion():
+    user_to_disconnect = []
+    while True:
+        for id in user_to_disconnect:
+                del tokens_list[id]
+        user_to_disconnect=[]
+        time.sleep(60)
+        current_time = time.time()
+        with lock:
+            for user_id, last_action_time in tokens_list.items():
+                time_difference = current_time - last_action_time
+                if time_difference >= 1800:  # 30 minutes en secondes
+                    user_to_disconnect.append(user_id)
+
+
+
 def help(update,context):
     update.message.reply_text("""
     /start => message au debut
     /help => commande annexe"""
                               )
 def send(update,context):
-    text=update.message.text.strip('/send ')
-    update.message.reply_text(text)
-    print(text)
+    user_id = update.message.from_user.id
+    if user_id in tokens_list.keys():
+        tokens_list[user_id]=time.time()
+        text=update.message.text.strip('/send ')
+        update.message.reply_text(text)
+    else:
+        update.message.reply_text('Veuillez vous connecter')
 
 def send_pict(update, context):
-    image=context.bot.get_file(update.message.photo[-1].file_id)
-    print(image)
-    print('ok')
+    user_id = update.message.from_user.id
+    if user_id in tokens_list.keys():
+        tokens_list[user_id] = time.time()
+        image=context.bot.get_file(update.message.photo[-1].file_id)
+        print(image)
+        print('ok')
+    else:
+        update.message.reply_text('Veuillez vous connecter')
 
 def send_audio(update,context):
-    print("sound ok")
-    sound=context.bot.get_file(update.message.voice.file_id)
-    print(sound)
+    user_id = update.message.from_user.id
+    if user_id in tokens_list.keys():
+        tokens_list[user_id] = time.time()
+        file = context.bot.get_file(update.message.voice.file_id)
+        audio = bytes(file.download_as_bytearray())
 
+        client = speech.SpeechClient.from_service_account_file(GOOGLE_CLOUD_KEY_PATH)
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.OGG_OPUS,
+            sample_rate_hertz=48000,
+            language_code="fr-FR",
+        )
+
+        audio=speech.RecognitionAudio(content=audio)
+        response=client.recognize(config=config,audio=audio)
+
+        for result in response.results:
+            print("Transcription: {}".format(result.alternatives[0].transcript))
+    else:
+        update.message.reply_text('Veuillez vous connecter')
+
+
+db_config = {
+    'host': '34.163.90.30',
+    'user': 'postgres',
+    'password': 'jn{2J$Rr{)[L~_17',
+    'database': 'PFE_bot',
+    'port': '5432',  # Par défaut, le port de PostgreSQL est 5432
+}
+
+try:
+    connection = psycopg2.connect(**db_config)
+    print('connected')
+    cursor = connection.cursor()
+except:
+    print('not connected')
+
+
+
+token='************'
+updater = telegram.ext.Updater(token,use_context=True)
+dispatcher=updater.dispatcher
+GOOGLE_CLOUD_KEY_PATH = "forward-subject-404414-79ec7490f294.json"
+
+tokens_list={}
+lock = threading.Lock()
+check_thread = threading.Thread(target=check_connexion)
+check_thread.start()
 dispatcher.add_handler(telegram.ext.CommandHandler('start',start))
 dispatcher.add_handler(telegram.ext.CommandHandler('help',help))
 dispatcher.add_handler(telegram.ext.CommandHandler('send',send))
+dispatcher.add_handler(telegram.ext.CommandHandler('connexion',connexion))
+dispatcher.add_handler(telegram.ext.CommandHandler('register',register))
+dispatcher.add_handler(telegram.ext.CommandHandler('update_mdp',update_mdp))
 dispatcher.add_handler(telegram.ext.MessageHandler(Filters.photo, send_pict))
 dispatcher.add_handler(telegram.ext.MessageHandler(Filters.voice, send_audio))
 
 updater.start_polling()
 updater.idle()
+
+
+
