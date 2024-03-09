@@ -96,7 +96,7 @@ def update_mdp(update,context):
 
 def connexion(update,context):
     id_user = update.effective_user.id
-    recherche_private_docs(id_user)
+    find_contenue([13,15,18])
     if id_user in tokens_list.keys():
         update.message.reply_text('vous êtes déjà connecté')
     else:
@@ -165,66 +165,29 @@ def send_text (update,context):
         update.message.reply_text("Vous avez choisi d'envoyer un texte. Veuillez entrer le texte maintenant.")
         return TEXT_INPUT
 
-def send_text_group (update,context):
-    id_user = update.effective_user.id
-    if id_user in tokens_list.keys():
-        group_id = update.message.text.strip('/send_text_group ')
-        search_query = f"SELECT id_users FROM groupe WHERE id = {group_id};"
-        cursor.execute(search_query)
-        results = cursor.fetchall()
-        ids=eval(results[0][0])
-        if id_user in ids:
-            context.chat_data['grouped'] = True
-            context.chat_data['id_group'] = group_id
-            update.message.reply_text("Vous avez choisi d'envoyer un texte. Veuillez entrer le texte maintenant.")
-            return TEXT_INPUT
-        else:
-            update.message.reply_text('Vous ne faites pas partie de ce groupe')
-            return ConversationHandler.END
+
 def define_text(update,context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
         tokens_list[id_user]=time.time()
         text=update.message.text.replace('/send ','')
 
-        resume=requete_GPT(text)
-        update.message.reply_text(resume)
-        resume=resume.replace("'",' ')
 
-        context.chat_data['text'] = resume
+        context.chat_data['text'] = text
 
         tags=requete_GPT_tags(text)
         tags = tags.replace("'", ' ')
         context.chat_data['tags'] = tags
         context.chat_data['type'] = 'text'
 
-        update.message.reply_text('Voulez-vous que la note soit publique ?')
+        update.message.reply_text('Voulez-vous que la note soit résumé ?')
         print(context.chat_data.get('tags', '[]'))
-        return CHOICE_INPUT
+        return CHOICE_RESUME
     else:
         update.message.reply_text('Veuillez vous connecter')
         return ConversationHandler.END
 
-    # noinspection PyUnreachableCode
-def define_text_brute(update, context):
-        id_user = update.effective_user.id
-        if id_user in tokens_list.keys():
-            tokens_list[id_user] = time.time()
-            text = update.message.text.replace('/send ', '')
 
-            context.chat_data['text'] = text
-
-            tags = requete_GPT_tags(text)
-            tags = tags.replace("'", ' ')
-            context.chat_data['tags'] = tags
-            context.chat_data['type'] = 'text_brute'
-
-            update.message.reply_text('Voulez-vous que la note soit publique ?')
-            print(context.chat_data.get('tags', '[]'))
-            return CHOICE_RAW_INPUT
-        else:
-            update.message.reply_text('Veuillez vous connecter')
-            return ConversationHandler.END
 
 
 
@@ -234,22 +197,7 @@ def send_audio(update,context):
         update.message.reply_text("Veuillez envoyer une note vocale")
         return VOICE_INPUT
 
-def send_audio_group(update,context):
-    id_user = update.effective_user.id
-    if id_user in tokens_list.keys():
-        group_id = update.message.text.strip('/send_audio_group ')
-        search_query = f"SELECT id_users FROM groupe WHERE id = {group_id};"
-        cursor.execute(search_query)
-        results = cursor.fetchall()
-        ids = eval(results[0][0])
-        if id_user in ids:
-            context.chat_data['grouped'] = True
-            context.chat_data['id_group'] = group_id
-            update.message.reply_text("Veuillez envoyer une note vocale")
-            return VOICE_INPUT
-        else:
-            update.message.reply_text('Vous ne faites pas partie de ce groupe')
-            return ConversationHandler.END
+
 
 
 def define_audio(update,context):
@@ -274,18 +222,17 @@ def define_audio(update,context):
         for result in response.results:
             text=result.alternatives[0].transcript
             print("Transcription: {}".format(text))
-            resume = requete_GPT(text)
-            resume = resume.replace("'", ' ')
-            context.chat_data['text'] = resume
-            update.message.reply_text(resume)
+
+            context.chat_data['text'] = text
+
             tags = requete_GPT_tags(text)
             tags = tags.replace("'", ' ')
             context.chat_data['tags'] = tags
             context.chat_data['type'] = 'audio'
             context.chat_data['grouped'] = False
 
-        update.message.reply_text('Voulez-vous que la note soit publique ?')
-        return CHOICE_INPUT
+        update.message.reply_text('Voulez-vous que la note soit résumé ?')
+        return CHOICE_RESUME_AUDIO
     else:
         update.message.reply_text('Veuillez vous connecter')
         return ConversationHandler.END
@@ -336,8 +283,8 @@ def define_pict(update, context):
         except:
             print('erreur')
             context.chat_data['tags'] = tab_tags
-        update.message.reply_text('Voulez-vous que la note soit publique ?')
-        return CHOICE_INPUT_IMAGE
+        update.message.reply_text('Voulez-vous que la note soit résumé ?')
+        return CHOICE_RESUME_IMAGE
     else:
         update.message.reply_text('Veuillez vous connecter')
         return ConversationHandler.END
@@ -405,10 +352,92 @@ def define_video(update, context):
         tags = [tup[0] for tup in tab_labels]
         print(tags)
         context.chat_data['tags'] = tags
-        update.message.reply_text('Voulez-vous que la note soit publique ?')
-        return CHOICE_INPUT_VIDEO
+        update.message.reply_text('Voulez-vous que la note soit résumé ?')
+        return CHOICE_RESUME_VIDEO
+
+
+def do_resume(update,context):
+    print('do_resume')
+    choix = update.message.text
+    if choix == 'oui' or choix == "yes" or choix == 'Oui' or choix == "Yes":
+        text=context.chat_data.get('text', None)
+        resume = requete_GPT(text)
+        resume = resume.replace("'", ' ')
+        context.chat_data['text'] = resume
+        update.message.reply_text(resume)
+
+    update.message.reply_text('Voulez-vous que la note soit une note de groupe ?')
+    type = context.chat_data.get('type', None)
+    if type == 'text':
+        return ISGROUP_INPUT
+    elif type == 'audio':
+         return ISGROUP_INPUT_AUDIO
+    elif type == 'image':
+        return ISGROUP_INPUT_IMAGE
+    elif type == 'video':
+        return ISGROUP_INPUT_VIDEO
+
+def is_group(update,context):
+    print('is_public')
+    choix = update.message.text
+    type = context.chat_data.get('type', None)
+    if choix == 'oui' or choix == "yes" or choix == 'Oui' or choix == "Yes":
+        update.message.reply_text("Entrer l'id du groupe.")
+
+        if type == 'text':
+            return GROUP_INPUT
+        elif type == 'audio':
+            return GROUP_INPUT_AUDIO
+        elif type == 'image':
+            return GROUP_INPUT_IMAGE
+        elif type == 'video':
+            return GROUP_INPUT_VIDEO
+
+    else:
+        update.message.reply_text("Voulez vous que la note soit publique?")
+        if type == 'text':
+            return CHOICE_INPUT
+        elif type == 'audio':
+            return CHOICE_INPUT_AUDIO
+        elif type == 'image':
+            return CHOICE_INPUT_IMAGE
+        elif type == 'video':
+            return CHOICE_INPUT_VIDEO
+
+
+def id_group(update,context):
+    print('id_group')
+    id_user = update.effective_user.id
+    if id_user in tokens_list.keys():
+        group_id = update.message.text
+        print(group_id)
+        search_query = f"SELECT id_users FROM groupe WHERE id = {group_id};"
+        cursor.execute(search_query)
+        results = cursor.fetchall()
+        ids = eval(results[0][0])
+        print(ids)
+        if id_user in ids:
+            print('ok ')
+            context.chat_data['grouped'] = True
+            context.chat_data['id_group'] = group_id
+            tags = context.chat_data.get('tags', '[]')
+            update.message.reply_text(f'Voici les tags actuel : {tags}')
+            update.message.reply_text('Voulez-vous ajouter un autre tags ?')
+            type = context.chat_data.get('type', 'Aucune donnée enregistré')
+            if type == 'text':
+                return CHOICE_TAGS
+            elif type == 'audio':
+                return CHOICE_TAGS_AUDIO
+            elif type == 'image':
+                return CHOICE_TAGS_IMAGE
+            elif type == 'video':
+                return CHOICE_TAGS_VIDEO
+        else:
+            update.message.reply_text('Vous ne faites pas partie de ce groupe')
+
 
 def is_public(update,context):
+    print('is_public')
     choix=update.message.text
     if choix=='oui' or choix=="yes" or choix=='Oui' or choix=="Yes":
         context.chat_data['public'] = True
@@ -428,8 +457,6 @@ def is_public(update,context):
         return CHOICE_TAGS_IMAGE
     elif type == 'video':
         return CHOICE_TAGS_VIDEO
-    elif type=='text_brute':
-        return CHOICE_RAW_TAGS
 
 def choose_add_tags(update,context):
     choix = update.message.text
@@ -444,8 +471,7 @@ def choose_add_tags(update,context):
             return ADD_TAGS_IMAGE
         elif type == 'video':
             return ADD_TAGS_VIDEO
-        elif type == 'text_brute':
-            return ADD_RAW_TAGS
+
     else:
         update.message.reply_text('entré un titre')
         if type == 'text':
@@ -456,8 +482,6 @@ def choose_add_tags(update,context):
             return TITLE_INPUT_IMAGE
         elif type == 'video':
             return TITLE_INPUT_VIDEO
-        elif type == 'text_brute':
-            return TITLE_RAW_INPUT
 
 
 def add_tags (update,context):
@@ -487,8 +511,6 @@ def add_tags (update,context):
         return CHOICE_TAGS_IMAGE
     elif type == 'video':
         return CHOICE_TAGS_VIDEO
-    elif type=='text_brute':
-        return CHOICE_RAW_TAGS
 
 
 def define_title(update,context):
@@ -505,7 +527,7 @@ def define_title(update,context):
     public=context.chat_data.get('public',False)
     date=datetime.datetime.now()
     date = date.strftime("%Y-%m-%d %H:%M:%S")
-    insert_query_doc = f"""INSERT INTO doc (titre, contenu, date_creation, tags, type, public, grouped_doc) values ('{title}','{text}','{date}','{tags}','{type}','{public}','{grouped }');"""
+    insert_query_doc = f"""INSERT INTO doc (titre, contenu, date_creation, tags, type, public, grouped_doc) values ('{title}','{text}','{date}','{tags}','{type}','{public}','{grouped}');"""
     cursor.execute(insert_query_doc)
     connection.commit()
     if grouped==True:
@@ -656,8 +678,38 @@ def recherche_private_docs(id_user):
         results2 = cursor.fetchall()
         for elem in results2:
             docs.append(elem[0])
-    print(docs)
+    return docs
 
+def recherche_public_docs(id_user):
+    docs=[]
+    query=f"SELECT follow FROM users WHERE id_user = '{id_user}'"
+    cursor.execute(query)
+    follows= cursor.fetchall()
+    follows=eval(follows[0][0])
+    query=f"SELECT doc_id, user_id FROM association;"
+    cursor.execute(query)
+    response = cursor.fetchall()
+    for elem in response:
+        if elem[1]!=None :
+            if int(elem[1]) in follows:
+                docs.append(elem[0])
+    for id_doc in docs :
+        query=f"SELECT public FROM doc WHERE id_doc='{id_doc}';"
+        cursor.execute(query)
+        public = cursor.fetchall()[0][0]
+        if public == False :
+            docs.remove(id_doc)
+    return docs
+
+
+def find_contenue(docs):
+    tab_contenue=[]
+    for id in docs :
+        query=f"SELECT * FROM doc WHERE id_doc='{id}'"
+        cursor.execute(query)
+        contenue = cursor.fetchall()[0]
+        tab_contenue.append(contenue)
+    print(tab_contenue)
 
 if __name__ == "__main__":
     db_config = {
@@ -677,11 +729,10 @@ if __name__ == "__main__":
     except:
         print('not connected')
 
-    TEXT_INPUT,CHOICE_INPUT,CHOICE_TAGS,ADD_TAGS,TITLE_INPUT = range(5)
-    TEXT_RAW_INPUT,CHOICE_RAW_INPUT,CHOICE_RAW_TAGS,ADD_RAW_TAGS,TITLE_RAW_INPUT = range(5)
-    VOICE_INPUT,CHOICE_INPUT_AUDIO ,CHOICE_TAGS_AUDIO,ADD_TAGS_AUDIO,TITLE_INPUT_AUDIO = range(5)
-    IMAGE_INPUT,CHOICE_INPUT_IMAGE ,CHOICE_TAGS_IMAGE,ADD_TAGS_IMAGE,TITLE_INPUT_IMAGE = range(5)
-    VIDEO_INPUT,CHOICE_INPUT_VIDEO ,CHOICE_TAGS_VIDEO,ADD_TAGS_VIDEO,TITLE_INPUT_VIDEO = range(5)
+    TEXT_INPUT,CHOICE_RESUME,ISGROUP_INPUT,GROUP_INPUT,CHOICE_INPUT,CHOICE_TAGS,ADD_TAGS,TITLE_INPUT = range(8)
+    VOICE_INPUT,CHOICE_RESUME_AUDIO,ISGROUP_INPUT_AUDIO,GROUP_INPUT_AUDIO,CHOICE_INPUT_AUDIO ,CHOICE_TAGS_AUDIO,ADD_TAGS_AUDIO,TITLE_INPUT_AUDIO = range(8)
+    IMAGE_INPUT,CHOICE_RESUME_IMAGE,ISGROUP_INPUT_IMAGE,GROUP_INPUT_IMAGE,CHOICE_INPUT_IMAGE ,CHOICE_TAGS_IMAGE,ADD_TAGS_IMAGE,TITLE_INPUT_IMAGE = range(8)
+    VIDEO_INPUT,CHOICE_RESUME_VIDEO,ISGROUP_INPUT_VIDEO,GROUP_INPUT_VIDEO,CHOICE_INPUT_VIDEO ,CHOICE_TAGS_VIDEO,ADD_TAGS_VIDEO,TITLE_INPUT_VIDEO = range(8)
 
     token='*************'
 
@@ -702,6 +753,9 @@ if __name__ == "__main__":
             entry_points=[CommandHandler('send_text', send_text)],
             states={
                 TEXT_INPUT : [MessageHandler(Filters.text & ~Filters.command, define_text)],
+                CHOICE_RESUME: [MessageHandler(Filters.text & ~Filters.command, do_resume)],
+                ISGROUP_INPUT :[MessageHandler(Filters.text & ~Filters.command, is_group)],
+                GROUP_INPUT: [MessageHandler(Filters.text & ~Filters.command, id_group)],
                 CHOICE_INPUT : [MessageHandler(Filters.text & ~Filters.command, is_public)],
                 CHOICE_TAGS : [MessageHandler(Filters.text & ~Filters.command, choose_add_tags)],
                 ADD_TAGS : [MessageHandler(Filters.text & ~Filters.command, add_tags)],
@@ -711,25 +765,16 @@ if __name__ == "__main__":
         )
 
     dispatcher.add_handler(conversation_handler_text)
-    conversation_handler_text_brute = ConversationHandler(
-            entry_points=[CommandHandler('send_text_brute', send_text)],
-            states={
-                TEXT_RAW_INPUT : [MessageHandler(Filters.text & ~Filters.command, define_text_brute)],
-                CHOICE_RAW_INPUT : [MessageHandler(Filters.text & ~Filters.command, is_public)],
-                CHOICE_RAW_TAGS : [MessageHandler(Filters.text & ~Filters.command, choose_add_tags)],
-                ADD_RAW_TAGS : [MessageHandler(Filters.text & ~Filters.command, add_tags)],
-                TITLE_RAW_INPUT: [MessageHandler(Filters.text & ~Filters.command, define_title)],
-            },
-            fallbacks=[CommandHandler('cancel', cancel)],
-        )
 
-    dispatcher.add_handler(conversation_handler_text_brute)
 
 
     conversation_handler_image = ConversationHandler(
             entry_points=[CommandHandler('send_pict', send_pict)],
             states={
                 IMAGE_INPUT : [MessageHandler(Filters.photo, define_pict)],
+                CHOICE_RESUME_IMAGE: [MessageHandler(Filters.text & ~Filters.command, do_resume)],
+                ISGROUP_INPUT_IMAGE: [MessageHandler(Filters.text & ~Filters.command, is_group)],
+                GROUP_INPUT_IMAGE: [MessageHandler(Filters.text & ~Filters.command, id_group)],
                 CHOICE_INPUT_IMAGE : [MessageHandler(Filters.text & ~Filters.command, is_public)],
                 CHOICE_TAGS_IMAGE : [MessageHandler(Filters.text & ~Filters.command, choose_add_tags)],
                 ADD_TAGS_IMAGE : [MessageHandler(Filters.text & ~Filters.command, add_tags)],
@@ -746,6 +791,9 @@ if __name__ == "__main__":
             entry_points=[CommandHandler('send_video', send_video)],
             states={
                 VIDEO_INPUT : [MessageHandler(Filters.video, define_video)],
+                CHOICE_RESUME_VIDEO: [MessageHandler(Filters.text & ~Filters.command, do_resume)],
+                ISGROUP_INPUT_VIDEO: [MessageHandler(Filters.text & ~Filters.command, is_group)],
+                GROUP_INPUT_VIDEO: [MessageHandler(Filters.text & ~Filters.command, id_group)],
                 CHOICE_INPUT_VIDEO : [MessageHandler(Filters.text & ~Filters.command, is_public)],
                 CHOICE_TAGS_VIDEO : [MessageHandler(Filters.text & ~Filters.command, choose_add_tags)],
                 ADD_TAGS_VIDEO : [MessageHandler(Filters.text & ~Filters.command, add_tags)],
@@ -755,21 +803,15 @@ if __name__ == "__main__":
         )
 
     dispatcher.add_handler(conversation_handler_video)
-    conversation_handler_text_group = ConversationHandler(
-            entry_points=[CommandHandler('send_text_group', send_text_group)],
-            states={
-                TEXT_INPUT : [MessageHandler(Filters.text & ~Filters.command, define_text)],
-                TITLE_INPUT: [MessageHandler(Filters.text & ~Filters.command, define_title)],
-            },
-            fallbacks=[CommandHandler('cancel', cancel)],
-        )
 
-    dispatcher.add_handler(conversation_handler_text_group)
 
     conversation_handler_voice=ConversationHandler(
         entry_points=[CommandHandler('send_audio',send_audio)],
         states={
             VOICE_INPUT : [MessageHandler(Filters.voice, define_audio)],
+            CHOICE_RESUME_AUDIO: [MessageHandler(Filters.text & ~Filters.command, do_resume)],
+            ISGROUP_INPUT_AUDIO: [MessageHandler(Filters.text & ~Filters.command, is_group)],
+            GROUP_INPUT_AUDIO: [MessageHandler(Filters.text & ~Filters.command, id_group)],
             CHOICE_INPUT_AUDIO : [MessageHandler(Filters.text & ~Filters.command, is_public)],
             CHOICE_TAGS_AUDIO :[MessageHandler(Filters.text & ~Filters.command, choose_add_tags)],
             ADD_TAGS_AUDIO :[MessageHandler(Filters.text & ~Filters.command, add_tags)],
@@ -780,16 +822,6 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(conversation_handler_voice)
 
-    conversation_handler_voice_group=ConversationHandler(
-        entry_points=[CommandHandler('send_audio_group',send_audio_group)],
-        states={
-            VOICE_INPUT : [MessageHandler(Filters.voice, define_audio)],
-            TITLE_INPUT_AUDIO : [MessageHandler(Filters.text & ~Filters.command, define_title)],
-        },
-        fallbacks=[CommandHandler('cancel', cancel)],
-    )
-
-    dispatcher.add_handler(conversation_handler_voice_group)
 
     dispatcher.add_handler(CommandHandler('connexion',connexion))
     dispatcher.add_handler(CommandHandler('register',register))
