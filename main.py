@@ -720,7 +720,7 @@ if __name__ == "__main__":
         'port': '5432',  # Par défaut, le port de PostgreSQL est 5432
     }
 
-    openai.api_key='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'
+    openai.api_key='****************************'
 
     try:
         connection = psycopg2.connect(**db_config)
@@ -734,7 +734,7 @@ if __name__ == "__main__":
     IMAGE_INPUT,CHOICE_RESUME_IMAGE,ISGROUP_INPUT_IMAGE,GROUP_INPUT_IMAGE,CHOICE_INPUT_IMAGE ,CHOICE_TAGS_IMAGE,ADD_TAGS_IMAGE,TITLE_INPUT_IMAGE = range(8)
     VIDEO_INPUT,CHOICE_RESUME_VIDEO,ISGROUP_INPUT_VIDEO,GROUP_INPUT_VIDEO,CHOICE_INPUT_VIDEO ,CHOICE_TAGS_VIDEO,ADD_TAGS_VIDEO,TITLE_INPUT_VIDEO = range(8)
 
-    token='6649338214:AAGS4ag-NDDZWX6gM5rRPP7RCH00vOBTUjg'
+    token='***************************'
 
     GOOGLE_CLOUD_KEY_PATH = "our-ratio-415208-65186935a597.json"
 
