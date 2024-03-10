@@ -715,7 +715,7 @@ def find_contenue(docs):
 if __name__ == "__main__":
     openai_api = os.envion.get('OPENAI_API_KEY')
     mdp_bdd = os.environ.get('MDP_BDD')
-    token_telegram = os.environ.get('TELEGRAM8TOKEN')
+    token_telegram = os.environ.get('TELEGRAM_TOKEN')
     
     
     db_config = {
