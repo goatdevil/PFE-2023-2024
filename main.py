@@ -11,6 +11,7 @@ import bcrypt
 from google.cloud import vision
 from google.cloud.vision_v1 import types
 import requests
+import os
 
 
 
@@ -712,15 +713,20 @@ def find_contenue(docs):
     print(tab_contenue)
 
 if __name__ == "__main__":
+    openai_api = os.envion.get('OPENAI_API_KEY')
+    mdp_bdd = os.environ.get('MDP_BDD')
+    token_telegram = os.environ.get('TELEGRAM8TOKEN')
+    
+    
     db_config = {
         'host': '34.163.148.165',
         'user': 'postgres',
-        'password': '{Y]EA:cZG=:?AD9-',
+        'password': mdp_bdd,
         'database': 'postgres',
         'port': '5432',  # Par défaut, le port de PostgreSQL est 5432
     }
 
-    openai.api_key='************************'
+    openai.api_key=openai_api
 
     try:
         connection = psycopg2.connect(**db_config)
@@ -734,7 +740,7 @@ if __name__ == "__main__":
     IMAGE_INPUT,CHOICE_RESUME_IMAGE,ISGROUP_INPUT_IMAGE,GROUP_INPUT_IMAGE,CHOICE_INPUT_IMAGE ,CHOICE_TAGS_IMAGE,ADD_TAGS_IMAGE,TITLE_INPUT_IMAGE = range(8)
     VIDEO_INPUT,CHOICE_RESUME_VIDEO,ISGROUP_INPUT_VIDEO,GROUP_INPUT_VIDEO,CHOICE_INPUT_VIDEO ,CHOICE_TAGS_VIDEO,ADD_TAGS_VIDEO,TITLE_INPUT_VIDEO = range(8)
 
-    token='*************'
+    token=token_telegram
 
     GOOGLE_CLOUD_KEY_PATH = "our-ratio-415208-65186935a597.json"
 
