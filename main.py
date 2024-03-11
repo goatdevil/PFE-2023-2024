@@ -742,7 +742,7 @@ if __name__ == "__main__":
 
     token=token_telegram
 
-    GOOGLE_CLOUD_KEY_PATH = "our-ratio-415208-65186935a597.json"
+    GOOGLE_CLOUD_KEY_PATH = "our-ratio-415208-75a140e48770.json"
 
     tokens_list={}
     lock = threading.Lock()
