@@ -1,8 +1,7 @@
 import time
 import datetime
 import telegram.ext
-from telegram.ext import Filters, ConversationHandler, CommandHandler, MessageHandler, CallbackContext, Updater, \
-    CallbackQueryHandler
+from telegram.ext import Filters, ConversationHandler, CommandHandler, MessageHandler, CallbackContext, Updater, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from google.oauth2 import service_account
 from google.cloud import speech, videointelligence, storage
