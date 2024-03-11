@@ -768,6 +768,7 @@ if __name__ == "__main__":
     mdp_bdd = os.environ.get('MDP_BDD')
     token_telegram = os.environ.get('TELEGRAM_TOKEN')
 
+
     db_config = {
         'host': '34.163.148.165',
         'user': 'postgres',
@@ -794,6 +795,7 @@ if __name__ == "__main__":
         8)
 
     token = token_telegram
+
 
     GOOGLE_CLOUD_KEY_PATH = "our-ratio-415208-75a140e48770.json"
 
