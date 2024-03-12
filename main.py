@@ -515,7 +515,7 @@ def choose_add_tags(update, context):
             return ADD_TAGS_VIDEO
 
     else:
-        query.edit_message_text(text=f"entré un titre")
+        query.edit_message_text(text=f"entrer un titre")
         if type == 'text':
             return TITLE_INPUT
         elif type == 'audio':
