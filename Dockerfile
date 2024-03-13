@@ -5,4 +5,4 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN echo "$GCP_JSON_BASE64" | base64 --decode > our-ratio-415208-75a140e48770.json
 EXPOSE 8000
-ENTRYPOINT ["python", "main.py"]
+CMD ["python", "main.py"]
