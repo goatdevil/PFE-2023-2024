@@ -11,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
         GCP_JSON_BASE64: ${{secrets.GCP_JSON_BASE64}}
-        MDP_BDD: ${{secrets.MDP_BDD}}
-        OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-        TELEGRAM_TOKEN: ${{secrets.TELEGRAM_TOKEN}}
     steps:
       
       -
