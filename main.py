@@ -88,7 +88,6 @@ def update_mdp(update, context):
 
 def connexion(update, context):
     id_user = update.effective_user.id
-    find_contenue([13, 15, 18])
     if id_user in tokens_list.keys():
         update.message.reply_text('vous êtes déjà connecté')
     else:
@@ -768,11 +767,8 @@ if __name__ == "__main__":
     mdp_bdd = str(os.environ.get('MDP_BDD'))
     token_telegram = str(os.environ.get('TELEGRAM_TOKEN'))
 
-    print(f'token telegram : {token_telegram}')
-    print(f'clé openai : {openai_api}')
-    print(f'mdp : {mdp_bdd}')
 
-
+    connected=False
     db_config = {
         'host': '34.163.148.165',
         'user': 'postgres',
@@ -782,13 +778,15 @@ if __name__ == "__main__":
     }
 
     openai.api_key = openai_api
-
-    try:
-        connection = psycopg2.connect(**db_config)
-        print('connected')
-        cursor = connection.cursor()
-    except:
-        print('not connected')
+    while connected==False:
+        time.sleep(5)
+        try:
+            connection = psycopg2.connect(**db_config)
+            print('connected')
+            cursor = connection.cursor()
+            connected=True
+        except:
+            print('not connected')
 
     TEXT_INPUT, CHOICE_RESUME, ISGROUP_INPUT, GROUP_INPUT, CHOICE_INPUT, CHOICE_TAGS, ADD_TAGS, TITLE_INPUT = range(8)
     VOICE_INPUT, CHOICE_RESUME_AUDIO, ISGROUP_INPUT_AUDIO, GROUP_INPUT_AUDIO, CHOICE_INPUT_AUDIO, CHOICE_TAGS_AUDIO, ADD_TAGS_AUDIO, TITLE_INPUT_AUDIO = range(
