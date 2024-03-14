@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Public Articles</title>
+    <div class="container mt-4">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            height: 100px;
+        }
+
+        .article {
+            border-left: 5px solid #007bff;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+
+        .article h2 {
+            color: #007bff;
+        }
+
+        .article p {
+            color: #333;
+        }
+
+        select {
+            padding: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Articles Publics</h1>
+        <img src="{{ url_for('static', filename='notebot-logo.png') }}" class="logo" alt="NoteBot Logo">
+    </div>
+
+    <select onchange="console.log('Change event triggered. Selected value: ', this.value);">
+        <option value="">Sélectionnez une date</option>
+        {% for article in articles %}
+        <option value="{{ article.date }}">{{ article.date }}</option>
+        {% endfor %}
+    </select>
+
+    {% for article in articles %}
+        <div class="article">
+            <h2>{{ article.title }}</h2>
+            <p>{{ article.content }}</p>
+            <small>Date: {{ article.date }}</small>
+        </div>
+    {% endfor %}
+</body>
+</html>
+
+
+

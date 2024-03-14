@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h2>Dashboard</h2>
+    <p>Welcome, {{ current_user.username }}!</p>
+    <a href="/logout">Logout</a>
+
+    <h3>Your Articles</h3>
+    <select name="articles" onchange="location = this.value;">
+        <option value="">Select an article...</option>
+        {% for article in articles %}
+        <option value="{{ url_for('article', id=article.id) }}">{{ article.title }}</option>
+        {% endfor %}
+    </select>
+
+    <a href="/public_articles">View Public Articles</a>
+</body>
+</html>
