@@ -768,6 +768,10 @@ if __name__ == "__main__":
     mdp_bdd = os.environ.get('MDP_BDD')
     token_telegram = os.environ.get('TELEGRAM_TOKEN')
 
+    print(f'token telegram : {token_telegram}')
+    print(f'clé openai : {openai_api}')
+    print(f'mdp : {mdp_bdd}')
+
 
     db_config = {
         'host': '34.163.148.165',
