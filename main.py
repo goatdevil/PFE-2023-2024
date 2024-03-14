@@ -88,7 +88,6 @@ def update_mdp(update, context):
 
 def connexion(update, context):
     id_user = update.effective_user.id
-    find_contenue([13, 15, 18])
     if id_user in tokens_list.keys():
         update.message.reply_text('vous êtes déjà connecté')
     else:
