@@ -795,6 +795,7 @@ if __name__ == "__main__":
         8)
 
     token = token_telegram
+    print(token)
 
 
     GOOGLE_CLOUD_KEY_PATH = "/app/our-ratio-415208-75a140e48770.json"
