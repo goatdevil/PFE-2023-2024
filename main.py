@@ -766,11 +766,12 @@ if __name__ == "__main__":
     openai_api = str(os.environ.get('OPENAI_API_KEY'))
     mdp_bdd = str(os.environ.get('MDP_BDD'))
     token_telegram = str(os.environ.get('TELEGRAM_TOKEN'))
+    unix_socket=str(os.environ.get('unix_socket'))
 
 
     connected=False
     db_config = {
-        'host': '34.163.148.165',
+        'host': unix_socket,
         'user': 'postgres',
         'password': mdp_bdd,
         'database': 'postgres',
