@@ -1,18 +1,11 @@
-from flask import Flask, render_template, redirect, url_for, request
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, session, render_template, redirect, url_for, request, send_file
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField
-from wtforms.validators import InputRequired, Length
-from werkzeug.security import generate_password_hash, check_password_hash
+import fonction_web
+
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SECRET_KEY'] = 'your-secret-key'
-db = SQLAlchemy(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+
 
 
 # Articles codés en dur avec des dates
@@ -22,38 +15,46 @@ articles = [
     {'id': 3, 'title': 'Article Public 3', 'content': 'Contenu de l\'article public 3...', 'date': '2024-01-03'},
 ]
 
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
+class User(UserMixin):
+    def __init__(self, user_id, password,follow):
+        self.id = user_id
+        self.password = password
+        self.follow = follow
 
-class Article(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(150), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    public = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    def get_id(self):
+        return str(self.id)
 
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[InputRequired(), Length(min=4, max=15)])
-    password = PasswordField('Password', validators=[InputRequired(), Length(min=8, max=80)])
-    remember = BooleanField('Remember me')
+    def get(user_id):
+        return fonction_web.find_user(user_id)
+# class Article(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     title = db.Column(db.String(150), nullable=False)
+#     content = db.Column(db.Text, nullable=False)
+#     public = db.Column(db.Boolean, default=False)
+#     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# class LoginForm(FlaskForm):
+#     username = StringField('username', validators=[InputRequired(), Length(min=1, max=15)])
+#     password = PasswordField('password', validators=[InputRequired(), Length(min=1, max=80)])
+#     remember = BooleanField('Remember me')
+#
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = LoginForm()
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if fonction_web.connexion_web(username,password)==True :
+            session['id_user']=username
+            return redirect('/')
 
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            return redirect(url_for('dashboard'))
 
-    return render_template('login.html', form=form)
+
+
+    return render_template('login.html')
 
 @app.route('/logout')
 @login_required
@@ -65,20 +66,32 @@ def logout():
 def index():
     return render_template('index1.html')
 
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    articles = Article.query.filter_by(user_id=current_user.id).all()
-    return render_template('dashboard.html', articles=articles)
+# @app.route('/dashboard')
+# @login_required
+# def dashboard():
+#     articles = Article.query.filter_by(user_id=current_user.id).all()
+#     return render_template('dashboard.html', articles=articles)
 
 @app.route('/public_articles')
 def public_articles():
-    return render_template('public_articles.html', articles=articles)
+    user_id = session['id_user']
+    docs = fonction_web.recherche_public_docs(user_id)
+    contenue = fonction_web.find_contenue(docs)
+    print(contenue)
+    return render_template('public_articles.html', contenue=contenue)
 
 @app.route('/perso')
 def perso():
-    return render_template('perso.html')
+    user_id=session['id_user']
+    docs=fonction_web.recherche_private_docs(user_id)
+    contenue=fonction_web.find_contenue(docs)
+    print(contenue)
+    return render_template('perso.html',contenue=contenue)
 
+@app.route('/download/<id_doc>')
+def download_file(id_doc):
+    pdf_output=fonction_web.generer_pdf(id_doc)
+    return send_file(pdf_output, mimetype='application/pdf',as_attachment=False)
 
 if __name__ == '__main__':
     app.run(debug=True)
