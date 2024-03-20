@@ -12,12 +12,6 @@ curl https://secretmanager.googleapis.com/v1/projects/$1/secrets/$2/versions/lat
 
 }
 
-ACCESS_TOKEN="$(get_accesstoken)"
-
-YOUR_SECRET=$(get_secret $PROJECT_ID $SECRET_NAME $ACCESS_TOKEN) 
-
- PROJECT_ID and SECRET_NAME variables can be taken from instance metadata (once you put them there at instance spawn), with a function like:
-
 function get_metadata() {
 
 curl $METADATA_ENDPOINT/attributes/$1 -H "Metadata-Flavor: Google" -fsSL
@@ -26,4 +20,16 @@ curl $METADATA_ENDPOINT/attributes/$1 -H "Metadata-Flavor: Google" -fsSL
 
 PROJECT_ID="$(get_metadata project-id)"
 
-SECRET_NAME="$(get_metadata secret-name)" 
+ACCESS_TOKEN="$(get_accesstoken)"
+
+MDP_BDD=$(get_secret $PROJECT_ID $MDP_BDD $ACCESS_TOKEN) 
+
+OPENAI_API_KEY=$(get_secret $PROJECT_ID $OPENAI_API_KEY $ACCESS_TOKEN) 
+
+TELEGRAM_TOKEN=$(get_secret $PROJECT_ID $TELEGRAM_TOKEN $ACCESS_TOKEN) 
+
+unix_socket=$(get_secret $PROJECT_ID $unix_socket $ACCESS_TOKEN) 
+
+
+
+
