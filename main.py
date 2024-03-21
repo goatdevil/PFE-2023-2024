@@ -774,11 +774,12 @@ def recup_secret(secret_name):
 
 
 if __name__ == "__main__":
+    print('ok')
 
     openai_api =recup_secret('OPENAI_API_KEY')
     mdp_bdd =recup_secret('MDP_BDD')
     token_telegram =recup_secret('TELEGRAM_TOKEN')
-
+    print('ok2')
 
     connected=False
     db_config = {
