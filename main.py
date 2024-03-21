@@ -45,7 +45,6 @@ def register(update, context):
     results = cursor.fetchall()
     if not results:
         mdp = update.message.text.split()[1]
-        print(mdp)
         bytes = mdp.encode('utf-8')
         salt = bcrypt.gensalt()
         hash = bcrypt.hashpw(bytes, salt)
@@ -102,7 +101,6 @@ def connexion(update, context):
         if result == True:
             with lock:
                 tokens_list[id_user] = time.time()
-                print(tokens_list)
                 update.message.reply_text('Connecté')
 
 
@@ -189,7 +187,7 @@ def define_audio(update, context):
     if id_user in tokens_list.keys():
         tokens_list[id_user] = time.time()
         file = context.bot.get_file(update.message.voice.file_id, timeout=30)
-        print('vocal recus')
+
         audio = bytes(file.download_as_bytearray())
 
         client = speech.SpeechClient.from_service_account_file(GOOGLE_CLOUD_KEY_PATH)
@@ -205,7 +203,6 @@ def define_audio(update, context):
 
         for result in response.results:
             text = result.alternatives[0].transcript
-            print("Transcription: {}".format(text))
 
             context.chat_data['text'] = text
 
@@ -266,13 +263,10 @@ def define_pict(update, context):
 
         context.chat_data['type'] = 'image'
         context.chat_data['grouped'] = False
-        print(tab_tags)
-        print(tags2)
         try:
             tab_tags.extend(eval(tags2))
             context.chat_data['tags'] = tab_tags
         except:
-            print('erreur')
             context.chat_data['tags'] = tab_tags
         inline_keyboard = [[InlineKeyboardButton('Oui', callback_data='Oui'),
                             InlineKeyboardButton('Non', callback_data='Non')]]
@@ -295,7 +289,6 @@ def send_video(update, context):
 def define_video(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
-        print('ok')
         context.chat_data['type'] = 'video'
         context.chat_data['grouped'] = False
         video = context.bot.get_file(update.message.video, timeout=30)
@@ -324,7 +317,6 @@ def define_video(update, context):
         for speech_transcription in annotation_results.speech_transcriptions:
             texte = speech_transcription.alternatives[0].transcript
             textes.append(texte)
-        print('ok')
         client_videointel = videointelligence.VideoIntelligenceServiceClient().from_service_account_file(
             GOOGLE_CLOUD_KEY_PATH)
         features = [videointelligence.Feature.LABEL_DETECTION]
@@ -344,12 +336,10 @@ def define_video(update, context):
                 confidence = segment.confidence
                 tab_labels.append((segment_label.entity.description, confidence))
         tab_labels = sorted(tab_labels, key=lambda x: x[1], reverse=True)
-        print(textes[0])
 
         context.chat_data['text'] = textes[0]
         tab_labels = tab_labels[:5]
         tags = [tup[0] for tup in tab_labels]
-        print(tags)
         context.chat_data['tags'] = tags
         inline_keyboard = [[InlineKeyboardButton('Oui', callback_data='Oui'),
                             InlineKeyboardButton('Non', callback_data='Non')]]
@@ -360,7 +350,6 @@ def define_video(update, context):
 
 
 def do_resume(update, context):
-    print('do_resume')
     query = update.callback_query
     choix = query.data
     if choix == 'Oui':
@@ -388,14 +377,12 @@ def do_resume(update, context):
 
 
 def is_group(update, context):
-    print('is_public')
     query = update.callback_query
     choix = query.data
     type = context.chat_data.get('type', None)
     if choix == 'Groupe':
         id_user = update.effective_user.id
         groups_in = find_group(id_user)
-        print(groups_in)
 
         buttons_line = []
         line_width = 2
@@ -435,19 +422,15 @@ def is_group(update, context):
 
 
 def id_group(update, context):
-    print('id_group')
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
         query = update.callback_query
         group_id = query.data
-        print(group_id)
         search_query = f"SELECT id_users FROM groupe WHERE id = {group_id};"
         cursor.execute(search_query)
         results = cursor.fetchall()
         ids = eval(results[0][0])
-        print(ids)
         if id_user in ids:
-            print('ok ')
             context.chat_data['grouped'] = True
             context.chat_data['id_group'] = group_id
             tags = context.chat_data.get('tags', '[]')
@@ -470,7 +453,6 @@ def id_group(update, context):
 
 
 def is_public(update, context):
-    print('is_public')
     query = update.callback_query
     choix = query.data
     if choix == 'Oui':
@@ -632,7 +614,6 @@ def add_user_group(update, context):
         results = cursor.fetchall()
         user_ids = eval(results[0][1])
         admin = results[0][2]
-        print(admin)
         if id_user == int(admin) and int(add_id) not in user_ids:
             user_ids.append(int(add_id))
             update_query = f"UPDATE groupe SET id_users = '{user_ids}' WHERE id = {group_id};"
@@ -758,7 +739,6 @@ def find_contenue(docs):
         cursor.execute(query)
         contenue = cursor.fetchall()[0]
         tab_contenue.append(contenue)
-    print(tab_contenue)
 
 def recup_secret(secret_name):
     project_id = "our-ratio-415208"
@@ -774,12 +754,10 @@ def recup_secret(secret_name):
 
 
 if __name__ == "__main__":
-    print('ok')
 
     openai_api =recup_secret('OPENAI_API_KEY')
     mdp_bdd =recup_secret('MDP_BDD')
     token_telegram =recup_secret('TELEGRAM_TOKEN')
-    print('ok2')
 
     connected=False
     db_config = {
@@ -792,7 +770,6 @@ if __name__ == "__main__":
 
     openai.api_key = openai_api
     while connected==False:
-        print('try connect')
         time.sleep(5)
         try:
             connection = psycopg2.connect(**db_config)
@@ -810,8 +787,7 @@ if __name__ == "__main__":
     VIDEO_INPUT, CHOICE_RESUME_VIDEO, ISGROUP_INPUT_VIDEO, GROUP_INPUT_VIDEO, CHOICE_INPUT_VIDEO, CHOICE_TAGS_VIDEO, ADD_TAGS_VIDEO, TITLE_INPUT_VIDEO = range(
         8)
 
-    token = token_telegram
-    print(token)
+
 
 
     GOOGLE_CLOUD_KEY_PATH = "/app/our-ratio-415208-75a140e48770.json"
