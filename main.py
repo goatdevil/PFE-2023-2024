@@ -766,7 +766,7 @@ if __name__ == "__main__":
     openai_api = str(os.environ.get('OPENAI_API_KEY'))
     mdp_bdd = str(os.environ.get('MDP_BDD'))
     token_telegram = str(os.environ.get('TELEGRAM_TOKEN'))
-   ip_bdd=str(os.environ.get('IP_BDD'))
+    ip_bdd=str(os.environ.get('IP_BDD'))
 
 
     connected=False
