@@ -792,6 +792,7 @@ if __name__ == "__main__":
 
     openai.api_key = openai_api
     while connected==False:
+        print('try connect')
         time.sleep(5)
         try:
             connection = psycopg2.connect(**db_config)
