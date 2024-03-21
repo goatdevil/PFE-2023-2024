@@ -797,7 +797,7 @@ if __name__ == "__main__":
     check_thread = threading.Thread(target=check_connexion)
     check_thread.start()
 
-    updater = Updater(token, use_context=True)
+    updater = Updater(token_telegram, use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', help))
