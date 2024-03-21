@@ -790,7 +790,7 @@ if __name__ == "__main__":
 
 
 
-    GOOGLE_CLOUD_KEY_PATH = "/app/our-ratio-415208-75a140e48770.json"
+    GOOGLE_CLOUD_KEY_PATH = "our-ratio-415208-75a140e48770.json"
 
     tokens_list = {}
     lock = threading.Lock()
