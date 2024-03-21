@@ -765,7 +765,8 @@ def recup_secret(secret_name):
 
     secret_id = secret_name
 
-    client = secretmanager.SecretManagerServiceClient().from_service_account_file('our-ratio-415208-75a140e48770.json')
+    client = secretmanager.SecretManagerServiceClient().from_service_account_file(
+            GOOGLE_CLOUD_KEY_PATH)
 
     secret_path = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
 
