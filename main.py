@@ -4,7 +4,7 @@ import telegram.ext
 from telegram.ext import Filters, ConversationHandler, CommandHandler, MessageHandler, CallbackContext, Updater, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from google.oauth2 import service_account
-from google.cloud import speech, videointelligence, storage
+from google.cloud import speech, videointelligence, storage, secretmanager
 import threading
 import psycopg2
 import openai
@@ -760,12 +760,24 @@ def find_contenue(docs):
         tab_contenue.append(contenue)
     print(tab_contenue)
 
+def recup_secret(secret_name):
+    project_id = "our-ratio-415208"
+
+    secret_id = secret_name
+
+    client = secretmanager.SecretManagerServiceClient().from_service_account_file('our-ratio-415208-75a140e48770.json')
+
+    secret_path = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+
+    response = client.access_secret_version(request={"name": secret_path})
+    return response.payload.data.decode("UTF-8")
+
 
 if __name__ == "__main__":
 
-    openai_api = str(os.environ.get('OPENAI_API_KEY'))
-    mdp_bdd = str(os.environ.get('MDP_BDD'))
-    token_telegram = str(os.environ.get('TELEGRAM_TOKEN'))
+    openai_api =recup_secret('OPENAI_API_KEY')
+    mdp_bdd =recup_secret('MDP_BDD')
+    token_telegram =recup_secret('TELEGRAM_TOKEN')
 
 
     connected=False
