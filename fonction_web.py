@@ -2,8 +2,21 @@ import bcrypt
 import psycopg2
 from fpdf import FPDF
 from io import BytesIO
+from google.cloud import secretmanager
+from google.oauth2 import service_account
 
+def recup_secret(secret_name):
+    project_id = "our-ratio-415208"
 
+    secret_id = secret_name
+
+    client = secretmanager.SecretManagerServiceClient().from_service_account_file("our-ratio-415208-75a140e48770.json")
+
+    secret_path = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+
+    response = client.access_secret_version(request={"name": secret_path})
+    return response.payload.data.decode("UTF-8")
+    
 def find_group(id_user):
     groups_in = []
     search_query = f"SELECT id,id_users FROM groupe;"
@@ -152,12 +165,12 @@ def generer_pdf(id_doc):
     pdf_output.seek(0)
     return pdf_output
 
-
+mdp_bdd =recup_secret('MDP_BDD')
 
 db_config = {
         'host': '34.163.148.165',
         'user': 'postgres',
-        'password': '{Y]EA:cZG=:?AD9-',
+        'password': 'mdp_bdd',
         'database': 'postgres',
         'port': '5432',  # Par défaut, le port de PostgreSQL est 5432
     }
