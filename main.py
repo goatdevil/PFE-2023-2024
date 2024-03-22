@@ -126,8 +126,15 @@ def help(update, context):
     /register => Permet de s'enregistrer dans la base en renseignant un mot de passe (/register mdp)
     /connexion => Permet de ce connecter en renseignant son mot de passe (/connexion mdp)
     /update_mdp => Permet de changer de mot de passe en renseignant l'ancien et le nouveau mot de passe (/update_mdp ancien_mdp nouveau_mdp)
-    /send_text => Permet de lancer une procedure de résumer de texte.
-    /send_audio => Permet de lancer une procedure de résumer de note vocale.
+    /send_text => Permet de lancer une procedure de note textuel.
+    /send_audio => Permet de lancer une procedure de note vocale.
+    /send_video => Permet de lancer une procedure de note à partir d'une video.
+    /send_pict => Permet de lancer une procedure de note à partir d'une image.
+    /create_group => Permet de crée un groupe d'utilisateur pour partager des notes beaucoup plus facilement ensuite (/create_group)
+    /check_groups => (/check_groups)
+    /add_user_group => (/add_user_group)
+    /del_user_group => (/del_user_group)
+    /change_admin_group => (/change_admin_group)
     """
                               )
 
