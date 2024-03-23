@@ -59,6 +59,7 @@ def register(update, context):
 
 def start(update, context):
     update.message.reply_text('Training PFE 2023')
+     update.message.reply_text('Pour avoir des informations sur les commandes du bot, entrer: /help')
     id_user = update.effective_user.id
 
     update.message.reply_text(f'Votre ID : {id_user}')
@@ -130,11 +131,11 @@ def help(update, context):
     /send_audio => Permet de lancer une procedure de note vocale.
     /send_video => Permet de lancer une procedure de note à partir d'une video.
     /send_pict => Permet de lancer une procedure de note à partir d'une image.
-    /create_group => Permet de crée un groupe d'utilisateur pour partager des notes beaucoup plus facilement ensuite (/create_group)
-    /check_groups => (/check_groups)
-    /add_user_group => (/add_user_group)
-    /del_user_group => (/del_user_group)
-    /change_admin_group => (/change_admin_group)
+    /create_group => Permet de crée un groupe d'utilisateur pour partager des notes beaucoup plus facilement ensuite (/create_group id_user1 id_user2 ...)
+    /check_groups => Permet d'afficher les groupes desquelles vous faites parties(/check_groups)
+    /add_user_group => Permet d'ajouter un membre à un groupe dont vous êtes membres (/add_user_group group_id user_add_id)
+    /del_user_group => Permet de supprimer un membre d'un groupe dont vous êtes l'admin(/del_user_group group_id user_del_id)
+    /change_admin_group => Permet de transferer votre rôle d'admin d'un groupe à un autre user(/change_admin_group group_id new_admin_id)
     """
                               )
 
