@@ -60,60 +60,79 @@
 
 </head>
 <body>
+    {% extends "base.html" %}
+
+    {% block title %}Mes Articles Personnels{% endblock %}
+
+    {% block content %}
     <h1 class="text-center mb-4">Mes Articles Personnels</h1>
 
-    <div class="search-container">
-        <input type="text" id="searchBox" onkeyup="searchArticles()" placeholder="Rechercher des articles..." class="form-control">
+ <div class="search-container">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <input type="text" id="searchBox" onkeyup="searchArticles()" placeholder="Rechercher par titre..." class="form-control">
+        </div>
+        <div class="col-md-4 mb-2">
+            <input type="text" id="searchByTitle" onkeyup="searchArticles()" placeholder="Rechercher par tags..." class="form-control">
+        </div>
+        <div class="col-md-4 mb-2">
+            <input type="text" id="searchByDate" onkeyup="searchArticles()" placeholder="Rechercher par date de création..." class="form-control">
+        </div>
     </div>
+    <div class="text-center mt-2">
+        <button class="btn btn-primary" type="submit">Rechercher</button>
+    </div>
+</div>
+
+
 
     <div id="articlesContainer">
-        <!-- Audio Articles -->
         <h2 class="category">Audio</h2>
         {% for element in contenue %}
-            {%if element[5]=='audio'%}
+            {% if element[5] == 'audio' %}
             <div class="article audio">
-                <div class="titre"><a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a></div>
-                <div class="case">
-                    <div class="contenue">{{ element[3] }}</div>
+                <div class="titre">
+                    <a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a>
                 </div>
-                <div class="case">
-                    <div class="contenue">{{ element[4] }}</div>
-                </div>
+                <div class="contenue">{{ element[3] }}</div>
+                <div class="contenue">{{ element[4] }}</div>
             </div>
             {% endif %}
         {% endfor %}
 
-        <!-- Video Articles -->
         <h2 class="category">Vidéo</h2>
         {% for element in contenue %}
-            {%if element[5]=='video'%}
+            {% if element[5] == 'video' %}
             <div class="article video">
-                <div class="titre"><a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a></div>
+                <div class="titre">
+                    <a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a>
+                </div>
                 <div class="contenue">{{ element[3] }}</div>
                 <div class="contenue">{{ element[4] }}</div>
             </div>
             {% endif %}
         {% endfor %}
 
-
-        <!-- Vocal Messages -->
         <h2 class="category">Vocaux</h2>
         {% for element in contenue %}
-            {%if element[5]=='image'%}
-            <div class="article image">
-                <div class="titre"><a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a></div>
+            {% if element[5] == 'vocal' %} <!-- Assurez-vous que le type est correct -->
+            <div class="article vocal">
+                <div class="titre">
+                    <a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a>
+                </div>
                 <div class="contenue">{{ element[3] }}</div>
                 <div class="contenue">{{ element[4] }}</div>
             </div>
             {% endif %}
         {% endfor %}
 
-        <!-- Text Articles -->
         <h2 class="category">Texte</h2>
         {% for element in contenue %}
-            {%if element[5]=='text'%}
+            {% if element[5] == 'text' %}
             <div class="article text">
-                <div class="titre"><a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a></div>
+                <div class="titre">
+                    <a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a>
+                </div>
                 <div class="contenue">{{ element[3] }}</div>
                 <div class="contenue">{{ element[4] }}</div>
             </div>
@@ -121,5 +140,22 @@
         {% endfor %}
     </div>
 
-</body>
-</html>
+    <script>
+        function searchArticles() {
+            var input, filter, articles, title, i, txtValue;
+            input = document.getElementById('searchBox');
+            filter = input.value.toUpperCase();
+            articles = document.getElementById('articlesContainer').getElementsByClassName('article');
+
+            for (i = 0; i < articles.length; i++) {
+                title = articles[i].getElementsByClassName('titre')[0].textContent;
+                if (title.toUpperCase().indexOf(filter) > -1) {
+                    articles[i].style.display = "";
+                } else {
+                    articles[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+    {% endblock %}
+

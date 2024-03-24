@@ -1,71 +1,121 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Public Articles</title>
+    <meta charset="UTF-8">
     <div class="container mt-4">
+    <title>Mes Articles Personnels</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        </div>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
+            margin: 20px;
             background-color: #f4f4f4;
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 20px;
+        .search-container {
+            margin-bottom: 20px;
         }
-
-        .logo {
-            height: 100px;
-        }
-
         .article {
             border-left: 5px solid #007bff;
             padding: 10px;
-            margin-bottom: 15px;
-            background-color: #fff;
+            margin-bottom: 10px;
             border-radius: 5px;
-        }
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
 
-        .article h2 {
+        }
+        .category {
             color: #007bff;
+            font-weight: bold;
+            margin-top: 20px;
         }
-
-        .article p {
-            color: #333;
-        }
-
-        select {
-            padding: 5px;
+        #searchBox {
             margin-bottom: 20px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #007bff;
+        }
+        .contenue{
+            padding-left : 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 2px solid black;
+            background-color: #007bff;
+            margin-left: 2em;
+
+        }
+
+        .titre{
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 24px; /* Taille de la police */
+            font-weight: bold;
         }
     </style>
+
 </head>
 <body>
-    <div class="header">
-        <h1>Articles Publics</h1>
-        <img src="{{ url_for('static', filename='notebot-logo.png') }}" class="logo" alt="NoteBot Logo">
+    {% extends "base.html" %}
+
+    {% block title %}Articles Publics{% endblock %}
+
+    {% block content %}
+    <h1 class="text-center mb-4">Articles Publics</h1>
+
+    <div class="search-container">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <input type="text" id="searchBox" onkeyup="searchArticles()" placeholder="Rechercher par titre..." class="form-control">
+        </div>
+        <div class="col-md-4 mb-2">
+            <input type="text" id="searchByTitle" onkeyup="searchArticles()" placeholder="Rechercher par tags..." class="form-control">
+        </div>
+        <div class="col-md-4 mb-2">
+            <input type="text" id="searchByDate" onkeyup="searchArticles()" placeholder="Rechercher par date de création..." class="form-control">
+        </div>
+    </div>
+    <div class="text-center">
+        <button class="btn btn-primary" type="submit">Rechercher</button>
+    </div>
+</div>
+
+
+    <div id="articlesContainer">
+        <!-- Exemple avec Audio, répétez ou ajustez pour les autres catégories -->
+        <h2 class="category">Audio</h2>
+        {% for element in contenue %}
+            {% if element[5] == 'audio' %}
+            <div class="article audio">
+                <div class="titre">
+                    <a href="{{ url_for('download_file', id_doc=element[0]) }}">{{ element[1] }}</a>
+                </div>
+                <div class="contenue">{{ element[3] }}</div>
+                <div class="contenue">{{ element[4] }}</div>
+            </div>
+            {% endif %}
+        {% endfor %}
     </div>
 
-    <select onchange="console.log('Change event triggered. Selected value: ', this.value);">
-        <option value="">Sélectionnez une date</option>
-        {% for article in articles %}
-        <option value="{{ article.date }}">{{ article.date }}</option>
-        {% endfor %}
-    </select>
+    <script>
+        function searchArticles() {
+            var input, filter, articles, title, i, txtValue;
+            input = document.getElementById('searchBox');
+            filter = input.value.toUpperCase();
+            articles = document.getElementById('articlesContainer').getElementsByClassName('article');
 
-    {% for article in articles %}
-        <div class="article">
-            <h2>{{ article.title }}</h2>
-            <p>{{ article.content }}</p>
-            <small>Date: {{ article.date }}</small>
-        </div>
-    {% endfor %}
-</body>
-</html>
-
-
-
+            for (i = 0; i < articles.length; i++) {
+                title = articles[i].getElementsByClassName('titre')[0].textContent;
+                if (title.toUpperCase().indexOf(filter) > -1) {
+                    articles[i].style.display = "";
+                } else {
+                    articles[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+    {% endblock %}

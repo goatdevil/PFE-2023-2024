@@ -15,6 +15,15 @@ articles = [
     {'id': 3, 'title': 'Article Public 3', 'content': 'Contenu de l\'article public 3...', 'date': '2024-01-03'},
 ]
 
+
+
+@app.route('/')
+def index():
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+    else:
+        return render_template('index1.html')
+
 class User(UserMixin):
     def __init__(self, user_id, password,follow):
         self.id = user_id
@@ -57,20 +66,11 @@ def login():
     return render_template('login.html')
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
-    return redirect(url_for('login'))
+    session.pop("id_user", None)
+    return redirect('/login')
 
-@app.route('/')
-def index():
-    return render_template('index1.html')
 
-# @app.route('/dashboard')
-# @login_required
-# def dashboard():
-#     articles = Article.query.filter_by(user_id=current_user.id).all()
-#     return render_template('dashboard.html', articles=articles)
 
 @app.route('/public_articles')
 def public_articles():
@@ -87,6 +87,12 @@ def perso():
     contenue=fonction_web.find_contenue(docs)
     print(contenue)
     return render_template('perso.html',contenue=contenue)
+
+@app.route('/follow')
+def follow_route():
+    # Logique pour gérer le suivi ici
+    return "Page de suivi ou redirection après action de suivi"
+
 
 @app.route('/download/<id_doc>')
 def download_file(id_doc):
