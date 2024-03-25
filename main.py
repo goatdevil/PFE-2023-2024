@@ -556,11 +556,8 @@ def define_title(update, context):
     text = context.chat_data.get('text', 'Aucun texte enregistré')
     tags = context.chat_data.get('tags', 'Aucun texte enregistré')
     print(tags)
-    try:
-        tags.replace("'", '')
-    except:
-        tags=str(tags)
-        tags = tags.replace("'", '')
+    tags=str(tags)
+    tags = tags.replace("'", '').replace('"','')
     text = text.replace("'", " ").replace('\n', ' ')
     type = context.chat_data.get('type', 'Aucune donnée enregistré')
     grouped = context.chat_data.get('grouped', False)
