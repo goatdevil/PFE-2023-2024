@@ -53,12 +53,17 @@ def register(update, context):
         cursor.execute(insert_query)
         connection.commit()
         update.message.reply_text(f'Bravo, vous êtes inscrit')
+        with lock:
+            tokens_list[id_user] = time.time()
+            update.message.reply_text('Vous êtes onnecté')
     else:
         update.message.reply_text(f'vous êtes déjà inscrit')
 
 
 def start(update, context):
-    update.message.reply_text('Training PFE 2023')
+    update.message.reply_text("""Bienvenue sur SummBuddy. Je suis un bot qui vous permets de crée des notes à partir de texte, d'image, de message audio et de vidéo.
+    Pour pouvoir commancer à m'utiliser, il faut que tu t'enregistre en utilisant la commande /register. Les prochaines fois tu n'aura plus qu'à te connecter avec /connexion.
+    Attention, ton ID Telegram et ton mot de passe te serviront aussi à te connecter sur le site web où tu retrouveras toutes tes notes.""")
     update.message.reply_text('Pour avoir des informations sur les commandes du bot, entrer: /help')
     id_user = update.effective_user.id
 
@@ -136,6 +141,7 @@ def help(update, context):
     /add_user_group => Permet d'ajouter un membre à un groupe dont vous êtes membres (/add_user_group group_id user_add_id)
     /del_user_group => Permet de supprimer un membre d'un groupe dont vous êtes l'admin(/del_user_group group_id user_del_id)
     /change_admin_group => Permet de transferer votre rôle d'admin d'un groupe à un autre user(/change_admin_group group_id new_admin_id)
+    /id => Affiche ton ID Telegram (si tu ne t'en souviens plus)
     """
                               )
 
@@ -154,18 +160,21 @@ def find_group(id_user):
 def send_text(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         context.chat_data['grouped'] = False
         update.message.reply_text("Vous avez choisi d'envoyer un texte. Veuillez entrer le texte maintenant.")
         return TEXT_INPUT
+    else:
+        update.message.reply_text('Veuillez vous connecté')
 
 
 def define_text(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
-        tokens_list[id_user] = time.time()
         text = update.message.text.replace('/send ', '')
 
         context.chat_data['text'] = text
+        update.message.reply_text(f'Votre note actuelle est: {text}')
 
         tags = requete_GPT_tags(text)
         tags = tags.replace("'", ' ')
@@ -186,14 +195,17 @@ def define_text(update, context):
 def send_audio(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         update.message.reply_text("Veuillez envoyer une note vocale")
         return VOICE_INPUT
+    else:
+        update.message.reply_text('Veuillez vous connecté')
+
 
 
 def define_audio(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
-        tokens_list[id_user] = time.time()
         file = context.bot.get_file(update.message.voice.file_id, timeout=30)
 
         audio = bytes(file.download_as_bytearray())
@@ -207,7 +219,9 @@ def define_audio(update, context):
                                           )
 
         audio = speech.RecognitionAudio(content=audio)
+        update.message.reply_text('Traitement en cour')
         response = client.recognize(config=config, audio=audio)
+        update.message.reply_text('Traitement finis')
 
         for result in response.results:
             text = result.alternatives[0].transcript
@@ -219,6 +233,7 @@ def define_audio(update, context):
             context.chat_data['tags'] = tags
             context.chat_data['type'] = 'audio'
             context.chat_data['grouped'] = False
+        update.message.reply_text(f'Votre note actuelle est: {text}')
 
         inline_keyboard = [[InlineKeyboardButton('Oui', callback_data='Oui'),
                             InlineKeyboardButton('Non', callback_data='Non')]]
@@ -234,14 +249,17 @@ def define_audio(update, context):
 def send_pict(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         update.message.reply_text("Veuillez envoyer une image/photo")
         return IMAGE_INPUT
+    else:
+        update.message.reply_text('Veuillez vous connecté')
+
 
 
 def define_pict(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
-        tokens_list[id_user] = time.time()
         # Configurez l'authentification en utilisant votre clé d'API
         client_options = {"api_endpoint": "eu-vision.googleapis.com"}
 
@@ -249,19 +267,28 @@ def define_pict(update, context):
             GOOGLE_CLOUD_KEY_PATH)
         # # Chargez l'image à partir de laquelle vous souhaitez détecter le texte
         image = context.bot.get_file(update.message.photo[-1].file_id)
+        print(image)
+
         link = image['file_path']
+        context.chat_data['url'] = link
+        update.message.reply_text('Traitement en cour')
         response = requests.get(link)
         image = types.Image(content=response.content)
 
         # Effectuez la demande de détection de texte
         response = client.text_detection(image=image)
-        texts = response.text_annotations
-        texte = texts[0].description
+        try:
+            texts = response.text_annotations
+            texte = texts[0].description
+        except:
+            texte=""
         context.chat_data['text'] = texte
+        update.message.reply_text(f'Votre note actuelle est: {texte}')
 
         client = vision.ImageAnnotatorClient(client_options=client_options).from_service_account_file(
             GOOGLE_CLOUD_KEY_PATH)
         response = client.label_detection(image=image)
+        update.message.reply_text('Traitement finis')
         texts = response.label_annotations
         tab_tags = []
         for text in texts:
@@ -290,8 +317,12 @@ def define_pict(update, context):
 def send_video(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         update.message.reply_text("Veuillez envoyer une vidéo")
         return VIDEO_INPUT
+    else:
+        update.message.reply_text('Veuillez vous connecté')
+
 
 
 def define_video(update, context):
@@ -319,6 +350,7 @@ def define_video(update, context):
         operation = client_videointel.annotate_video(
             request={"features": features, "input_uri": f"gs://bucket-pfe-video/{nom}", "video_context": video_context}
         )
+        update.message.reply_text('Traitement en cour')
         result = operation.result(timeout=600)
         annotation_results = result.annotation_results[0]
         textes = []
@@ -337,6 +369,7 @@ def define_video(update, context):
         )
 
         result = operation.result(timeout=180)
+        update.message.reply_text('Traitement finis')
         tab_labels = []
         segment_labels = result.annotation_results[0].segment_label_annotations
         for i, segment_label in enumerate(segment_labels):
@@ -346,9 +379,12 @@ def define_video(update, context):
         tab_labels = sorted(tab_labels, key=lambda x: x[1], reverse=True)
 
         context.chat_data['text'] = textes[0]
+        update.message.reply_text(f'Votre note actuelle est: {textes[0]}')
         tab_labels = tab_labels[:5]
         tags = [tup[0] for tup in tab_labels]
         context.chat_data['tags'] = tags
+        blob.delete()
+
         inline_keyboard = [[InlineKeyboardButton('Oui', callback_data='Oui'),
                             InlineKeyboardButton('Non', callback_data='Non')]]
         markup = InlineKeyboardMarkup(inline_keyboard)
@@ -555,7 +591,7 @@ def define_title(update, context):
     update.message.reply_text(f'Le titre du document est : {title}')
     text = context.chat_data.get('text', 'Aucun texte enregistré')
     tags = context.chat_data.get('tags', 'Aucun texte enregistré')
-    print(tags)
+    url = context.chat_data.get('url', None)
     tags=str(tags)
     tags = tags.replace("'", '').replace('"','')
     text = text.replace("'", " ").replace('\n', ' ')
@@ -564,7 +600,10 @@ def define_title(update, context):
     public = context.chat_data.get('public', False)
     date = datetime.datetime.now()
     date = date.strftime("%Y-%m-%d %H:%M:%S")
-    insert_query_doc = f"""INSERT INTO doc (titre, contenu, date_creation, tags, type, public, grouped_doc) values ('{title}','{text}','{date}','{tags}','{type}','{public}','{grouped}');"""
+    if url == None:
+        insert_query_doc = f"""INSERT INTO doc (titre, contenu, date_creation, tags, type, public, grouped_doc) values ('{title}','{text}','{date}','{tags}','{type}','{public}','{grouped}');"""
+    else:
+        insert_query_doc = f"""INSERT INTO doc (titre, contenu, date_creation, tags, type, public, grouped_doc, url) values ('{title}','{text}','{date}','{tags}','{type}','{public}','{grouped}','{url}');"""
     cursor.execute(insert_query_doc)
     connection.commit()
     if grouped == True:
@@ -580,6 +619,7 @@ def define_title(update, context):
                         (SELECT id_user FROM users WHERE id_user='{id_user}')"""
     cursor.execute(insert_query_doc)
     connection.commit()
+    update.message.reply_text(f'Votre note a bien été enregister.')
     context.chat_data.clear()
     return ConversationHandler.END
 
@@ -616,6 +656,7 @@ def create_group(update, context):
 def add_user_group(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         message = update.message.text.replace('/add_user_group ', '').split()
         group_id = message[0]
         add_id = message[1]
@@ -637,6 +678,7 @@ def add_user_group(update, context):
 def del_user_group(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         message = update.message.text.replace('/del_user_group ', '').split()
         group_id = message[0]
         del_id = int(message[1])
@@ -658,6 +700,7 @@ def del_user_group(update, context):
 def change_admin_group(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         message = update.message.text.replace('/change_admin_group ', '').split()
         group_id = message[0]
         change_id = int(message[1])
@@ -678,89 +721,17 @@ def change_admin_group(update, context):
 def check_groups(update, context):
     id_user = update.effective_user.id
     if id_user in tokens_list.keys():
+        tokens_list[id_user] = time.time()
         groups_in = find_group(id_user)
         update.message.reply_text(f'vous faites partis des groupes suivants : {groups_in}')
 
+def show_id(update,context):
+    id_user = update.effective_user.id
+    update.message.reply_text(f'Votre ID est : {id_user}')
 
 def cancel(update, context):
     context.chat_data.clear()
     return ConversationHandler.END
-
-
-def follow(id_user, id_follow):
-    query = f"SELECT * FROM users WHERE id_user = '{id_follow}' ;"
-    cursor.execute(query)
-    results = cursor.fetchall()
-    if results:
-        query = f"SELECT follow FROM users WHERE id_user = '{id_user}';"
-        cursor.execute(query)
-        results = cursor.fetchall()
-        follows = eval(results[0][0])
-        if id_follow not in follows:
-            follows.append(id_follow)
-            update_query = f"UPDATE users SET follow = '{follows}' WHERE id_user = '{id_user}';"
-            cursor.execute(update_query)
-            connection.commit()
-
-
-def recherche_private_docs(id_user):
-    docs = []
-    groups_in = find_group(id_user)
-    query = f"SELECT  doc_id FROM association WHERE user_id = '{id_user}';"
-    cursor.execute(query)
-    results1 = cursor.fetchall()
-    for elem in results1:
-        docs.append(elem[0])
-    for group_id in groups_in:
-        query = f"SELECT doc_id FROM association WHERE groupe_id = '{group_id}';"
-        cursor.execute(query)
-        results2 = cursor.fetchall()
-        for elem in results2:
-            docs.append(elem[0])
-    return docs
-
-
-def recherche_public_docs(id_user):
-    docs = []
-    query = f"SELECT follow FROM users WHERE id_user = '{id_user}'"
-    cursor.execute(query)
-    follows = cursor.fetchall()
-    follows = eval(follows[0][0])
-    query = f"SELECT doc_id, user_id FROM association;"
-    cursor.execute(query)
-    response = cursor.fetchall()
-    for elem in response:
-        if elem[1] != None:
-            if int(elem[1]) in follows:
-                docs.append(elem[0])
-    for id_doc in docs:
-        query = f"SELECT public FROM doc WHERE id_doc='{id_doc}';"
-        cursor.execute(query)
-        public = cursor.fetchall()[0][0]
-        if public == False:
-            docs.remove(id_doc)
-    return docs
-
-
-def find_contenue(docs):
-    tab_contenue = []
-    for id in docs:
-        query = f"SELECT * FROM doc WHERE id_doc='{id}'"
-        cursor.execute(query)
-        contenue = cursor.fetchall()[0]
-        tab_contenue.append(contenue)
-
-def recup_secret(secret_name):
-    project_id = "our-ratio-415208"
-
-    secret_id = secret_name
-
-    client = secretmanager.SecretManagerServiceClient()
-
-    secret_path = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
-
-    response = client.access_secret_version(request={"name": secret_path})
-    return response.payload.data.decode("UTF-8")
 
 
 if __name__ == "__main__":
@@ -888,6 +859,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('add_user_group', add_user_group))
     dispatcher.add_handler(CommandHandler('del_user_group', del_user_group))
     dispatcher.add_handler(CommandHandler('change_admin_group', change_admin_group))
+     dispatcher.add_handler(CommandHandler('id', show_id))
 
     updater.start_polling()
     updater.idle()
