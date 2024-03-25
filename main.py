@@ -59,7 +59,7 @@ def register(update, context):
 
 def start(update, context):
     update.message.reply_text('Training PFE 2023')
-     update.message.reply_text('Pour avoir des informations sur les commandes du bot, entrer: /help')
+    update.message.reply_text('Pour avoir des informations sur les commandes du bot, entrer: /help')
     id_user = update.effective_user.id
 
     update.message.reply_text(f'Votre ID : {id_user}')
