@@ -732,6 +732,18 @@ def show_id(update,context):
 def cancel(update, context):
     context.chat_data.clear()
     return ConversationHandler.END
+    
+def recup_secret(secret_name):
+    project_id = "our-ratio-415208"
+
+    secret_id = secret_name
+
+    client = secretmanager.SecretManagerServiceClient()
+
+    secret_path = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+
+    response = client.access_secret_version(request={"name": secret_path})
+    return response.payload.data.decode("UTF-8")
 
 
 if __name__ == "__main__":
