@@ -303,9 +303,9 @@ def define_video(update, context):
         video_url = video['file_path']
         video_content = requests.get(video_url).content
 
-        client = storage.Client.from_service_account_json('our-ratio-415208-65186935a597.json')
+        client = storage.Client.from_service_account_json(GOOGLE_CLOUD_KEY_PATH)
         bucket = client.get_bucket('bucket-pfe-video')
-        nom = 'video'
+        nom = f'video{id_user}'
         blob = bucket.blob(nom)
         blob.upload_from_string(video_content, content_type='video/mp4')
 
