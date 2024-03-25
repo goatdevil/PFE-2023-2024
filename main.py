@@ -557,7 +557,7 @@ def define_title(update, context):
     tags = context.chat_data.get('tags', 'Aucun texte enregistré')
     print(tags)
     try:
-        tags = eval(str(tags.replace("'", '"')))
+        tags = str(tags.replace("'", '"'))
     except:
         tags.replace("'", '"')
     text = text.replace("'", " ").replace('\n', ' ')
