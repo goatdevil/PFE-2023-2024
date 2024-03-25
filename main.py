@@ -558,7 +558,7 @@ def define_title(update, context):
     print(tags)
     try:
         tags=str(tags)
-        tags = tags.replace("'", '"')
+        tags = tags.replace("'", '')
     except:
         tags.replace("'", '"')
     text = text.replace("'", " ").replace('\n', ' ')
