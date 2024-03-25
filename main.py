@@ -871,7 +871,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('add_user_group', add_user_group))
     dispatcher.add_handler(CommandHandler('del_user_group', del_user_group))
     dispatcher.add_handler(CommandHandler('change_admin_group', change_admin_group))
-     dispatcher.add_handler(CommandHandler('id', show_id))
+    dispatcher.add_handler(CommandHandler('id', show_id))
 
     updater.start_polling()
     updater.idle()
