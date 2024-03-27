@@ -55,7 +55,7 @@ def register(update, context):
         update.message.reply_text(f'Bravo, vous êtes inscrit')
         with lock:
             tokens_list[id_user] = time.time()
-            update.message.reply_text('Vous êtes onnecté')
+            update.message.reply_text('Vous êtes connecté')
     else:
         update.message.reply_text(f'Vous êtes déjà inscrit')
 
