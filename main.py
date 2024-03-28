@@ -330,71 +330,77 @@ def send_video(update, context):
 
 
 def define_video(update, context):
-    id_user = update.effective_user.id
-    if id_user in tokens_list.keys():
-        context.chat_data['type'] = 'video'
-        context.chat_data['grouped'] = False
-        video = context.bot.get_file(update.message.video, timeout=30)
-        video_url = video['file_path']
-        video_content = requests.get(video_url).content
-
-        client = storage.Client.from_service_account_json(GOOGLE_CLOUD_KEY_PATH)
-        bucket = client.get_bucket('bucket-pfe-video')
-        nom = f'video{id_user}'
-        blob = bucket.blob(nom)
-        blob.upload_from_string(video_content, content_type='video/mp4')
-
-        client_videointel = videointelligence.VideoIntelligenceServiceClient().from_service_account_file(
-            GOOGLE_CLOUD_KEY_PATH)
-        features = [videointelligence.Feature.SPEECH_TRANSCRIPTION]
-        config = videointelligence.SpeechTranscriptionConfig(language_code="fr-FR", enable_automatic_punctuation=True)
-
-        video_context = videointelligence.VideoContext(speech_transcription_config=config)
-
-        operation = client_videointel.annotate_video(
-            request={"features": features, "input_uri": f"gs://bucket-pfe-video/{nom}", "video_context": video_context}
-        )
-        update.message.reply_text('Traitement en cours')
-        result = operation.result(timeout=600)
-        annotation_results = result.annotation_results[0]
-        textes = []
-        for speech_transcription in annotation_results.speech_transcriptions:
-            texte = speech_transcription.alternatives[0].transcript
-            textes.append(texte)
-        client_videointel = videointelligence.VideoIntelligenceServiceClient().from_service_account_file(
-            GOOGLE_CLOUD_KEY_PATH)
-        features = [videointelligence.Feature.LABEL_DETECTION]
-        mode = videointelligence.LabelDetectionMode.SHOT_AND_FRAME_MODE
-        config = videointelligence.LabelDetectionConfig(label_detection_mode=mode)
-        video_context = videointelligence.VideoContext(label_detection_config=config)
-
-        operation = client_videointel.annotate_video(
-            request={"features": features, "input_uri": f"gs://bucket-pfe-video/{nom}", "video_context": video_context}
-        )
-
-        result = operation.result(timeout=180)
-        update.message.reply_text('Traitement fini')
-        tab_labels = []
-        segment_labels = result.annotation_results[0].segment_label_annotations
-        for i, segment_label in enumerate(segment_labels):
-            for i, segment in enumerate(segment_label.segments):
-                confidence = segment.confidence
-                tab_labels.append((segment_label.entity.description, confidence))
-        tab_labels = sorted(tab_labels, key=lambda x: x[1], reverse=True)
-
-        context.chat_data['text'] = textes[0]
-        update.message.reply_text(f'Votre note actuelle est: {textes[0]}')
-        tab_labels = tab_labels[:5]
-        tags = [tup[0] for tup in tab_labels]
-        context.chat_data['tags'] = tags
-        blob.delete()
-
-        inline_keyboard = [[InlineKeyboardButton('Oui', callback_data='Oui'),
-                            InlineKeyboardButton('Non', callback_data='Non')]]
-        markup = InlineKeyboardMarkup(inline_keyboard)
-
-        update.message.reply_text('Voulez-vous que la note soit résumée ?', reply_markup=markup)
-        return CHOICE_RESUME_VIDEO
+    try:
+        id_user = update.effective_user.id
+        if id_user in tokens_list.keys():
+            context.chat_data['type'] = 'video'
+            context.chat_data['grouped'] = False
+            video = context.bot.get_file(update.message.video, timeout=30)
+            video_url = video['file_path']
+            video_content = requests.get(video_url).content
+    
+            client = storage.Client.from_service_account_json(GOOGLE_CLOUD_KEY_PATH)
+            bucket = client.get_bucket('bucket-pfe-video')
+            nom = f'video{id_user}'
+            blob = bucket.blob(nom)
+            blob.upload_from_string(video_content, content_type='video/mp4')
+    
+            client_videointel = videointelligence.VideoIntelligenceServiceClient().from_service_account_file(
+                GOOGLE_CLOUD_KEY_PATH)
+            features = [videointelligence.Feature.SPEECH_TRANSCRIPTION]
+            config = videointelligence.SpeechTranscriptionConfig(language_code="fr-FR", enable_automatic_punctuation=True)
+    
+            video_context = videointelligence.VideoContext(speech_transcription_config=config)
+    
+            operation = client_videointel.annotate_video(
+                request={"features": features, "input_uri": f"gs://bucket-pfe-video/{nom}", "video_context": video_context}
+            )
+            update.message.reply_text('Traitement en cours')
+            result = operation.result(timeout=600)
+                        try:
+                annotation_results = result.annotation_results[0]
+                textes = []
+                for speech_transcription in annotation_results.speech_transcriptions:
+                    texte = speech_transcription.alternatives[0].transcript
+                    textes.append(texte)
+            except:
+                textes=[""]
+            client_videointel = videointelligence.VideoIntelligenceServiceClient().from_service_account_file(
+                GOOGLE_CLOUD_KEY_PATH)
+            features = [videointelligence.Feature.LABEL_DETECTION]
+            mode = videointelligence.LabelDetectionMode.SHOT_AND_FRAME_MODE
+            config = videointelligence.LabelDetectionConfig(label_detection_mode=mode)
+            video_context = videointelligence.VideoContext(label_detection_config=config)
+    
+            operation = client_videointel.annotate_video(
+                request={"features": features, "input_uri": f"gs://bucket-pfe-video/{nom}", "video_context": video_context}
+            )
+    
+            result = operation.result(timeout=180)
+            update.message.reply_text('Traitement fini')
+            tab_labels = []
+            segment_labels = result.annotation_results[0].segment_label_annotations
+            for i, segment_label in enumerate(segment_labels):
+                for i, segment in enumerate(segment_label.segments):
+                    confidence = segment.confidence
+                    tab_labels.append((segment_label.entity.description, confidence))
+            tab_labels = sorted(tab_labels, key=lambda x: x[1], reverse=True)
+    
+            context.chat_data['text'] = textes[0]
+            update.message.reply_text(f'Votre note actuelle est: {textes[0]}')
+            tab_labels = tab_labels[:5]
+            tags = [tup[0] for tup in tab_labels]
+            context.chat_data['tags'] = tags
+            blob.delete()
+    
+            inline_keyboard = [[InlineKeyboardButton('Oui', callback_data='Oui'),
+                                InlineKeyboardButton('Non', callback_data='Non')]]
+            markup = InlineKeyboardMarkup(inline_keyboard)
+    
+            update.message.reply_text('Voulez-vous que la note soit résumée ?', reply_markup=markup)
+            return CHOICE_RESUME_VIDEO
+        except:
+            return ConversationHandler.END
 
 
 def do_resume(update, context):
