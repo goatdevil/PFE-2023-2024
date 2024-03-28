@@ -357,7 +357,7 @@ def define_video(update, context):
             )
             update.message.reply_text('Traitement en cours')
             result = operation.result(timeout=600)
-                        try:
+            try:
                 annotation_results = result.annotation_results[0]
                 textes = []
                 for speech_transcription in annotation_results.speech_transcriptions:
