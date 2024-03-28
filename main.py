@@ -399,7 +399,7 @@ def define_video(update, context):
     
             update.message.reply_text('Voulez-vous que la note soit résumée ?', reply_markup=markup)
             return CHOICE_RESUME_VIDEO
-        except:
+    except:
             return ConversationHandler.END
 
 
